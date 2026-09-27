@@ -116,7 +116,7 @@ ERA5 precipitation comes from short-range (≤18 h) forecasts that are heavily c
 
 | Dataset | Source | Use | Check / caveat |
 |---|---|---|---|
-| District boundaries (Survey of India based) | DataMeet — https://projects.datameet.org/maps/districts/ (CC BY 2.5 India) | District aggregation and map | Secondary. Census-2011 districts (~640); India now has ~780. Newer LGD-based polygons: https://yashveeeeeeer.github.io/india-geodata/ |
+| District boundaries (Survey of India based) | DataMeet `Survey-of-India-Index-Maps/Boundaries/India-Districts-2011Census.shp` — https://github.com/datameet/maps (project page states CC BY 2.5 India; GitHub reports MIT; attribute DataMeet) | District aggregation and map | **Verified** (Phase 6): 641 Census-2011 districts, EPSG:4326, unique census codes, 1 invalid polygon repaired. India now has ~780 districts (e.g. Telangana is still inside Andhra Pradesh). Coverage by IMD land cells: 608 districts ≥ 95%; none for Andaman & Nicobar (3) and Lakshadweep (islands not in the IMD grid); Chennai 4.5%. |
 | geoBoundaries ADM2 India | https://data.humdata.org/dataset/geoboundaries-admin-boundaries-for-india | Fallback | International boundary may not match the official Survey of India depiction — **do not use for a MoES-facing map** |
 | Elevation (DEM) | e.g. NOAA ETOPO 2022 or SRTM / Copernicus GLO-90 | Orography features (elevation, slope, upslope flow) | To choose in Phase 3 |
 | Land–sea mask / coastline | Derived from DEM or Natural Earth | Coastal features (distance to coast) | To choose in Phase 3 |

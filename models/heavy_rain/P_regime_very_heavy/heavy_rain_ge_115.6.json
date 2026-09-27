@@ -1,0 +1,1 @@
+{"threshold_mm": 115.6, "features": ["nwp_precip_mm", "nwp_log1p", "nwp_mean_3x3", "nwp_max_3x3", "nwp_mean_7x7", "nwp_max_7x7", "obs_climatology_mm", "doy_sin", "doy_cos", "lat", "lon", "lead_day", "elevation_m", "coast_km", "clim_p_ge_115.6", "p_NORMAL", "p_ACTIVE", "p_BREAK", "p_MONSOON_DEPRESSION", "local_INLAND", "local_COASTAL", "local_OROGRAPHIC"], "rounds": 85}

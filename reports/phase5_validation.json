@@ -1,0 +1,1418 @@
+{
+  "scope": "VALIDATION years 2016-2017; test years not used",
+  "data_kind": "real",
+  "trained_on": [
+    2010,
+    2015
+  ],
+  "sources": {
+    "features": "NOAA GEFSv12 reforecast c00 (forecast fields) + IMD core-zone anomaly before init",
+    "labels": "IMD gridded rainfall (active/break) + IMD RSMC best track (depressions)"
+  },
+  "results": {
+    "R0_rule": {
+      "all": {
+        "n": 720,
+        "accuracy": 0.7055555555555556,
+        "balanced_accuracy": 0.5233487132525594,
+        "macro_f1": 0.534518510816694,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.800383877159309,
+            "recall": 0.8224852071005917,
+            "f1": 0.811284046692607,
+            "support": 507
+          },
+          "ACTIVE": {
+            "precision": 0.4222222222222222,
+            "recall": 0.48717948717948717,
+            "f1": 0.4523809523809524,
+            "support": 78
+          },
+          "BREAK": {
+            "precision": 0.5714285714285714,
+            "recall": 0.38095238095238093,
+            "f1": 0.45714285714285713,
+            "support": 63
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.43283582089552236,
+            "recall": 0.4027777777777778,
+            "f1": 0.4172661870503597,
+            "support": 72
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              417,
+              47,
+              15,
+              28
+            ],
+            [
+              31,
+              38,
+              0,
+              9
+            ],
+            [
+              38,
+              0,
+              24,
+              1
+            ],
+            [
+              35,
+              5,
+              3,
+              29
+            ]
+          ]
+        }
+      },
+      "july_august_only": {
+        "n": 372,
+        "accuracy": 0.6639784946236559,
+        "balanced_accuracy": 0.5470987979549624,
+        "macro_f1": 0.5625336937603007,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.7341772151898734,
+            "recall": 0.7945205479452054,
+            "f1": 0.7631578947368421,
+            "support": 219
+          },
+          "ACTIVE": {
+            "precision": 0.5932203389830508,
+            "recall": 0.5833333333333334,
+            "f1": 0.5882352941176471,
+            "support": 60
+          },
+          "BREAK": {
+            "precision": 0.5357142857142857,
+            "recall": 0.38461538461538464,
+            "f1": 0.44776119402985076,
+            "support": 39
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.4791666666666667,
+            "recall": 0.42592592592592593,
+            "f1": 0.45098039215686275,
+            "support": 54
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              174,
+              19,
+              10,
+              16
+            ],
+            [
+              17,
+              35,
+              0,
+              8
+            ],
+            [
+              23,
+              0,
+              15,
+              1
+            ],
+            [
+              23,
+              5,
+              3,
+              23
+            ]
+          ]
+        }
+      },
+      "by_lead": {
+        "1": {
+          "n": 242,
+          "accuracy": 0.7272727272727273,
+          "balanced_accuracy": 0.6198468928732087,
+          "macro_f1": 0.6057406530298097,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.84472049689441,
+              "recall": 0.7953216374269005,
+              "f1": 0.8192771084337349,
+              "support": 171
+            },
+            "ACTIVE": {
+              "precision": 0.4411764705882353,
+              "recall": 0.5769230769230769,
+              "f1": 0.5,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.6875,
+              "recall": 0.5238095238095238,
+              "f1": 0.5945945945945946,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.45161290322580644,
+              "recall": 0.5833333333333334,
+              "f1": 0.509090909090909,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                136,
+                18,
+                5,
+                12
+              ],
+              [
+                6,
+                15,
+                0,
+                5
+              ],
+              [
+                10,
+                0,
+                11,
+                0
+              ],
+              [
+                9,
+                1,
+                0,
+                14
+              ]
+            ]
+          }
+        },
+        "2": {
+          "n": 240,
+          "accuracy": 0.7166666666666667,
+          "balanced_accuracy": 0.5136217948717948,
+          "macro_f1": 0.5341273274757465,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.7944444444444444,
+              "recall": 0.8461538461538461,
+              "f1": 0.8194842406876791,
+              "support": 169
+            },
+            "ACTIVE": {
+              "precision": 0.52,
+              "recall": 0.5,
+              "f1": 0.5098039215686274,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.5833333333333334,
+              "recall": 0.3333333333333333,
+              "f1": 0.42424242424242425,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.391304347826087,
+              "recall": 0.375,
+              "f1": 0.3829787234042553,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                143,
+                11,
+                5,
+                10
+              ],
+              [
+                9,
+                13,
+                0,
+                4
+              ],
+              [
+                14,
+                0,
+                7,
+                0
+              ],
+              [
+                14,
+                1,
+                0,
+                9
+              ]
+            ]
+          }
+        },
+        "3": {
+          "n": 238,
+          "accuracy": 0.6722689075630253,
+          "balanced_accuracy": 0.43666924392972295,
+          "macro_f1": 0.45336192728881947,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.7666666666666667,
+              "recall": 0.8263473053892215,
+              "f1": 0.7953890489913544,
+              "support": 167
+            },
+            "ACTIVE": {
+              "precision": 0.3225806451612903,
+              "recall": 0.38461538461538464,
+              "f1": 0.3508771929824561,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.42857142857142855,
+              "recall": 0.2857142857142857,
+              "f1": 0.34285714285714286,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.46153846153846156,
+              "recall": 0.25,
+              "f1": 0.32432432432432434,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                138,
+                18,
+                5,
+                6
+              ],
+              [
+                16,
+                10,
+                0,
+                0
+              ],
+              [
+                14,
+                0,
+                6,
+                1
+              ],
+              [
+                12,
+                3,
+                3,
+                6
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "RF": {
+      "all": {
+        "n": 720,
+        "accuracy": 0.7388888888888889,
+        "balanced_accuracy": 0.4535197708274631,
+        "macro_f1": 0.49133279139085667,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.7846410684474123,
+            "recall": 0.9270216962524654,
+            "f1": 0.8499095840867993,
+            "support": 507
+          },
+          "ACTIVE": {
+            "precision": 0.5714285714285714,
+            "recall": 0.3076923076923077,
+            "f1": 0.4,
+            "support": 78
+          },
+          "BREAK": {
+            "precision": 0.6190476190476191,
+            "recall": 0.4126984126984127,
+            "f1": 0.49523809523809526,
+            "support": 63
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.32432432432432434,
+            "recall": 0.16666666666666666,
+            "f1": 0.22018348623853212,
+            "support": 72
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              470,
+              14,
+              14,
+              9
+            ],
+            [
+              38,
+              24,
+              0,
+              16
+            ],
+            [
+              37,
+              0,
+              26,
+              0
+            ],
+            [
+              54,
+              4,
+              2,
+              12
+            ]
+          ]
+        }
+      },
+      "july_august_only": {
+        "n": 372,
+        "accuracy": 0.6370967741935484,
+        "balanced_accuracy": 0.41886342348671113,
+        "macro_f1": 0.4447710440652787,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.6866197183098591,
+            "recall": 0.8904109589041096,
+            "f1": 0.7753479125248509,
+            "support": 219
+          },
+          "ACTIVE": {
+            "precision": 0.575,
+            "recall": 0.38333333333333336,
+            "f1": 0.46,
+            "support": 60
+          },
+          "BREAK": {
+            "precision": 0.6363636363636364,
+            "recall": 0.1794871794871795,
+            "f1": 0.28,
+            "support": 39
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.32432432432432434,
+            "recall": 0.2222222222222222,
+            "f1": 0.26373626373626374,
+            "support": 54
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              195,
+              13,
+              2,
+              9
+            ],
+            [
+              21,
+              23,
+              0,
+              16
+            ],
+            [
+              32,
+              0,
+              7,
+              0
+            ],
+            [
+              36,
+              4,
+              2,
+              12
+            ]
+          ]
+        }
+      },
+      "by_lead": {
+        "1": {
+          "n": 242,
+          "accuracy": 0.7644628099173554,
+          "balanced_accuracy": 0.5303563395668659,
+          "macro_f1": 0.5669419206235902,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.8263157894736842,
+              "recall": 0.9181286549707602,
+              "f1": 0.8698060941828255,
+              "support": 171
+            },
+            "ACTIVE": {
+              "precision": 0.6,
+              "recall": 0.34615384615384615,
+              "f1": 0.43902439024390244,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.7333333333333333,
+              "recall": 0.5238095238095238,
+              "f1": 0.6111111111111112,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.36363636363636365,
+              "recall": 0.3333333333333333,
+              "f1": 0.34782608695652173,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                157,
+                5,
+                4,
+                5
+              ],
+              [
+                8,
+                9,
+                0,
+                9
+              ],
+              [
+                10,
+                0,
+                11,
+                0
+              ],
+              [
+                15,
+                1,
+                0,
+                8
+              ]
+            ]
+          }
+        },
+        "2": {
+          "n": 240,
+          "accuracy": 0.7291666666666666,
+          "balanced_accuracy": 0.4310897435897436,
+          "macro_f1": 0.4608108108108109,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.7761194029850746,
+              "recall": 0.9230769230769231,
+              "f1": 0.8432432432432433,
+              "support": 169
+            },
+            "ACTIVE": {
+              "precision": 0.5555555555555556,
+              "recall": 0.38461538461538464,
+              "f1": 0.45454545454545453,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.5833333333333334,
+              "recall": 0.3333333333333333,
+              "f1": 0.42424242424242425,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.2222222222222222,
+              "recall": 0.08333333333333333,
+              "f1": 0.12121212121212122,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                156,
+                6,
+                4,
+                3
+              ],
+              [
+                12,
+                10,
+                0,
+                4
+              ],
+              [
+                14,
+                0,
+                7,
+                0
+              ],
+              [
+                19,
+                2,
+                1,
+                2
+              ]
+            ]
+          }
+        },
+        "3": {
+          "n": 238,
+          "accuracy": 0.7226890756302521,
+          "balanced_accuracy": 0.39917829176811215,
+          "macro_f1": 0.4252063492063492,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.7548076923076923,
+              "recall": 0.9401197604790419,
+              "f1": 0.8373333333333334,
+              "support": 167
+            },
+            "ACTIVE": {
+              "precision": 0.5555555555555556,
+              "recall": 0.19230769230769232,
+              "f1": 0.2857142857142857,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.5333333333333333,
+              "recall": 0.38095238095238093,
+              "f1": 0.4444444444444444,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.3333333333333333,
+              "recall": 0.08333333333333333,
+              "f1": 0.13333333333333333,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                157,
+                3,
+                6,
+                1
+              ],
+              [
+                18,
+                5,
+                0,
+                3
+              ],
+              [
+                13,
+                0,
+                8,
+                0
+              ],
+              [
+                20,
+                1,
+                1,
+                2
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "LGBM": {
+      "all": {
+        "n": 720,
+        "accuracy": 0.6666666666666666,
+        "balanced_accuracy": 0.5631193059077675,
+        "macro_f1": 0.522184256825353,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.8348214285714286,
+            "recall": 0.73767258382643,
+            "f1": 0.7832460732984293,
+            "support": 507
+          },
+          "ACTIVE": {
+            "precision": 0.43010752688172044,
+            "recall": 0.5128205128205128,
+            "f1": 0.4678362573099415,
+            "support": 78
+          },
+          "BREAK": {
+            "precision": 0.4479166666666667,
+            "recall": 0.6825396825396826,
+            "f1": 0.5408805031446541,
+            "support": 63
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.27710843373493976,
+            "recall": 0.3194444444444444,
+            "f1": 0.2967741935483871,
+            "support": 72
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              374,
+              47,
+              48,
+              38
+            ],
+            [
+              17,
+              40,
+              0,
+              21
+            ],
+            [
+              19,
+              0,
+              43,
+              1
+            ],
+            [
+              38,
+              6,
+              5,
+              23
+            ]
+          ]
+        }
+      },
+      "july_august_only": {
+        "n": 372,
+        "accuracy": 0.6048387096774194,
+        "balanced_accuracy": 0.5083943137025329,
+        "macro_f1": 0.5092687904127984,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.7464788732394366,
+            "recall": 0.726027397260274,
+            "f1": 0.7361111111111112,
+            "support": 219
+          },
+          "ACTIVE": {
+            "precision": 0.43548387096774194,
+            "recall": 0.45,
+            "f1": 0.4426229508196721,
+            "support": 60
+          },
+          "BREAK": {
+            "precision": 0.5428571428571428,
+            "recall": 0.48717948717948717,
+            "f1": 0.5135135135135135,
+            "support": 39
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.3225806451612903,
+            "recall": 0.37037037037037035,
+            "f1": 0.3448275862068966,
+            "support": 54
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              159,
+              29,
+              11,
+              20
+            ],
+            [
+              12,
+              27,
+              0,
+              21
+            ],
+            [
+              19,
+              0,
+              19,
+              1
+            ],
+            [
+              23,
+              6,
+              5,
+              20
+            ]
+          ]
+        }
+      },
+      "by_lead": {
+        "1": {
+          "n": 242,
+          "accuracy": 0.6818181818181818,
+          "balanced_accuracy": 0.615097439110597,
+          "macro_f1": 0.5630823934645623,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.8561643835616438,
+              "recall": 0.7309941520467836,
+              "f1": 0.7886435331230284,
+              "support": 171
+            },
+            "ACTIVE": {
+              "precision": 0.41379310344827586,
+              "recall": 0.46153846153846156,
+              "f1": 0.43636363636363634,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.5666666666666667,
+              "recall": 0.8095238095238095,
+              "f1": 0.6666666666666666,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.2972972972972973,
+              "recall": 0.4583333333333333,
+              "f1": 0.36065573770491804,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                125,
+                17,
+                13,
+                16
+              ],
+              [
+                4,
+                12,
+                0,
+                10
+              ],
+              [
+                4,
+                0,
+                17,
+                0
+              ],
+              [
+                13,
+                0,
+                0,
+                11
+              ]
+            ]
+          }
+        },
+        "2": {
+          "n": 240,
+          "accuracy": 0.6708333333333333,
+          "balanced_accuracy": 0.5799520991828684,
+          "macro_f1": 0.5352917550285972,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.8493150684931506,
+              "recall": 0.7337278106508875,
+              "f1": 0.7873015873015873,
+              "support": 169
+            },
+            "ACTIVE": {
+              "precision": 0.45161290322580644,
+              "recall": 0.5384615384615384,
+              "f1": 0.49122807017543857,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.4838709677419355,
+              "recall": 0.7142857142857143,
+              "f1": 0.5769230769230769,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.25,
+              "recall": 0.3333333333333333,
+              "f1": 0.2857142857142857,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                124,
+                14,
+                15,
+                16
+              ],
+              [
+                4,
+                14,
+                0,
+                8
+              ],
+              [
+                6,
+                0,
+                15,
+                0
+              ],
+              [
+                12,
+                3,
+                1,
+                8
+              ]
+            ]
+          }
+        },
+        "3": {
+          "n": 238,
+          "accuracy": 0.6470588235294118,
+          "balanced_accuracy": 0.49436018073742627,
+          "macro_f1": 0.4629883844706482,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.8012820512820513,
+              "recall": 0.7485029940119761,
+              "f1": 0.7739938080495357,
+              "support": 167
+            },
+            "ACTIVE": {
+              "precision": 0.42424242424242425,
+              "recall": 0.5384615384615384,
+              "f1": 0.4745762711864407,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.3142857142857143,
+              "recall": 0.5238095238095238,
+              "f1": 0.39285714285714285,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.2857142857142857,
+              "recall": 0.16666666666666666,
+              "f1": 0.21052631578947367,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                125,
+                16,
+                20,
+                6
+              ],
+              [
+                9,
+                14,
+                0,
+                3
+              ],
+              [
+                9,
+                0,
+                11,
+                1
+              ],
+              [
+                13,
+                3,
+                4,
+                4
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "CNN": {
+      "all": {
+        "n": 720,
+        "accuracy": 0.5361111111111111,
+        "balanced_accuracy": 0.5870168826899597,
+        "macro_f1": 0.46629225077266145,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.8083067092651757,
+            "recall": 0.4990138067061144,
+            "f1": 0.6170731707317073,
+            "support": 507
+          },
+          "ACTIVE": {
+            "precision": 0.3544973544973545,
+            "recall": 0.8589743589743589,
+            "f1": 0.50187265917603,
+            "support": 78
+          },
+          "BREAK": {
+            "precision": 0.2824427480916031,
+            "recall": 0.5873015873015873,
+            "f1": 0.38144329896907214,
+            "support": 63
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.3333333333333333,
+            "recall": 0.4027777777777778,
+            "f1": 0.36477987421383645,
+            "support": 72
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              253,
+              110,
+              87,
+              57
+            ],
+            [
+              10,
+              67,
+              0,
+              1
+            ],
+            [
+              26,
+              0,
+              37,
+              0
+            ],
+            [
+              24,
+              12,
+              7,
+              29
+            ]
+          ]
+        }
+      },
+      "july_august_only": {
+        "n": 372,
+        "accuracy": 0.6290322580645161,
+        "balanced_accuracy": 0.5886356983959724,
+        "macro_f1": 0.5619017360396671,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.7700534759358288,
+            "recall": 0.6575342465753424,
+            "f1": 0.7093596059113301,
+            "support": 219
+          },
+          "ACTIVE": {
+            "precision": 0.4666666666666667,
+            "recall": 0.8166666666666667,
+            "f1": 0.593939393939394,
+            "support": 60
+          },
+          "BREAK": {
+            "precision": 0.4857142857142857,
+            "recall": 0.4358974358974359,
+            "f1": 0.4594594594594595,
+            "support": 39
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": 0.5333333333333333,
+            "recall": 0.4444444444444444,
+            "f1": 0.48484848484848486,
+            "support": 54
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              144,
+              44,
+              11,
+              20
+            ],
+            [
+              10,
+              49,
+              0,
+              1
+            ],
+            [
+              22,
+              0,
+              17,
+              0
+            ],
+            [
+              11,
+              12,
+              7,
+              24
+            ]
+          ]
+        }
+      },
+      "by_lead": {
+        "1": {
+          "n": 242,
+          "accuracy": 0.5826446280991735,
+          "balanced_accuracy": 0.6667208887603624,
+          "macro_f1": 0.5257742257742258,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.8653846153846154,
+              "recall": 0.5263157894736842,
+              "f1": 0.6545454545454545,
+              "support": 171
+            },
+            "ACTIVE": {
+              "precision": 0.3709677419354839,
+              "recall": 0.8846153846153846,
+              "f1": 0.5227272727272727,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.3409090909090909,
+              "recall": 0.7142857142857143,
+              "f1": 0.46153846153846156,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.40625,
+              "recall": 0.5416666666666666,
+              "f1": 0.4642857142857143,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                90,
+                36,
+                27,
+                18
+              ],
+              [
+                2,
+                23,
+                0,
+                1
+              ],
+              [
+                6,
+                0,
+                15,
+                0
+              ],
+              [
+                6,
+                3,
+                2,
+                13
+              ]
+            ]
+          }
+        },
+        "2": {
+          "n": 240,
+          "accuracy": 0.5333333333333333,
+          "balanced_accuracy": 0.5828226260918569,
+          "macro_f1": 0.4642898428321357,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.8,
+              "recall": 0.4970414201183432,
+              "f1": 0.6131386861313869,
+              "support": 169
+            },
+            "ACTIVE": {
+              "precision": 0.3728813559322034,
+              "recall": 0.8461538461538461,
+              "f1": 0.5176470588235295,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.2727272727272727,
+              "recall": 0.5714285714285714,
+              "f1": 0.36923076923076925,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.3125,
+              "recall": 0.4166666666666667,
+              "f1": 0.35714285714285715,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                84,
+                33,
+                30,
+                22
+              ],
+              [
+                4,
+                22,
+                0,
+                0
+              ],
+              [
+                9,
+                0,
+                12,
+                0
+              ],
+              [
+                8,
+                4,
+                2,
+                10
+              ]
+            ]
+          }
+        },
+        "3": {
+          "n": 238,
+          "accuracy": 0.49159663865546216,
+          "balanced_accuracy": 0.5113495536399728,
+          "macro_f1": 0.4047325213943629,
+          "per_class": {
+            "NORMAL": {
+              "precision": 0.7596153846153846,
+              "recall": 0.47305389221556887,
+              "f1": 0.5830258302583026,
+              "support": 167
+            },
+            "ACTIVE": {
+              "precision": 0.3235294117647059,
+              "recall": 0.8461538461538461,
+              "f1": 0.46808510638297873,
+              "support": 26
+            },
+            "BREAK": {
+              "precision": 0.23255813953488372,
+              "recall": 0.47619047619047616,
+              "f1": 0.3125,
+              "support": 21
+            },
+            "MONSOON_DEPRESSION": {
+              "precision": 0.2608695652173913,
+              "recall": 0.25,
+              "f1": 0.2553191489361702,
+              "support": 24
+            }
+          },
+          "confusion_matrix": {
+            "labels": [
+              "NORMAL",
+              "ACTIVE",
+              "BREAK",
+              "MONSOON_DEPRESSION"
+            ],
+            "rows_true_cols_pred": [
+              [
+                79,
+                41,
+                30,
+                17
+              ],
+              [
+                4,
+                22,
+                0,
+                0
+              ],
+              [
+                11,
+                0,
+                10,
+                0
+              ],
+              [
+                10,
+                5,
+                3,
+                6
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "reference_always_NORMAL": {
+      "all": {
+        "n": 720,
+        "accuracy": 0.7041666666666667,
+        "balanced_accuracy": 0.25,
+        "macro_f1": 0.20660146699266504,
+        "per_class": {
+          "NORMAL": {
+            "precision": 0.7041666666666667,
+            "recall": 1.0,
+            "f1": 0.8264058679706602,
+            "support": 507
+          },
+          "ACTIVE": {
+            "precision": NaN,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 78
+          },
+          "BREAK": {
+            "precision": NaN,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 63
+          },
+          "MONSOON_DEPRESSION": {
+            "precision": NaN,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 72
+          }
+        },
+        "confusion_matrix": {
+          "labels": [
+            "NORMAL",
+            "ACTIVE",
+            "BREAK",
+            "MONSOON_DEPRESSION"
+          ],
+          "rows_true_cols_pred": [
+            [
+              507,
+              0,
+              0,
+              0
+            ],
+            [
+              78,
+              0,
+              0,
+              0
+            ],
+            [
+              63,
+              0,
+              0,
+              0
+            ],
+            [
+              72,
+              0,
+              0,
+              0
+            ]
+          ]
+        }
+      }
+    }
+  }
+}

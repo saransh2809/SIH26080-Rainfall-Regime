@@ -1,0 +1,50 @@
+{
+  "name": "heavy_rain_ge_115.6",
+  "model_type": "LightGBM binary (log-loss, unweighted)",
+  "package_version": "0.1.0",
+  "data_kind": "real",
+  "created_utc": "2026-09-27T20:59:24+00:00",
+  "features": [
+    "nwp_precip_mm",
+    "nwp_log1p",
+    "nwp_mean_3x3",
+    "nwp_max_3x3",
+    "nwp_mean_7x7",
+    "nwp_max_7x7",
+    "obs_climatology_mm",
+    "doy_sin",
+    "doy_cos",
+    "lat",
+    "lon",
+    "lead_day",
+    "elevation_m",
+    "coast_km",
+    "clim_p_ge_115.6",
+    "p_NORMAL",
+    "p_ACTIVE",
+    "p_BREAK",
+    "p_MONSOON_DEPRESSION",
+    "local_INLAND",
+    "local_COASTAL",
+    "local_OROGRAPHIC"
+  ],
+  "training_period": [
+    2010,
+    2015
+  ],
+  "validation_period": [
+    2016,
+    2017
+  ],
+  "test_period_used": false,
+  "data_sources": {
+    "target": "IMD gridded rainfall >= threshold"
+  },
+  "validation_metrics": {
+    "brier": 0.0029508821856443707,
+    "bss_vs_climatology": 0.013323397815546478,
+    "roc_auc": 0.8730892307344719
+  },
+  "threshold_mm": 115.6,
+  "rounds": 85
+}

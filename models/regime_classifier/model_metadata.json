@@ -1,0 +1,96 @@
+{
+  "name": "regime_classifier",
+  "model_type": "R0 rule / RandomForest / LightGBM multiclass",
+  "package_version": "0.1.0",
+  "data_kind": "real",
+  "created_utc": "2026-09-27T20:49:06+00:00",
+  "features": [
+    "fc_core_rain_mm",
+    "fc_core_anom",
+    "fc_west_coast_rain_mm",
+    "llj_u850",
+    "central_u850",
+    "trough_vort_max",
+    "trough_vort_mean",
+    "trough_mslp_min",
+    "mslp_south_minus_trough",
+    "core_pwat_mm",
+    "obs_core_anom_lag1",
+    "obs_core_anom_lag2",
+    "lead_day",
+    "doy_sin",
+    "doy_cos"
+  ],
+  "training_period": [
+    2010,
+    2015
+  ],
+  "validation_period": [
+    2016,
+    2017
+  ],
+  "test_period_used": false,
+  "data_sources": {
+    "features": "NOAA GEFSv12 reforecast c00 (forecast fields) + IMD core-zone anomaly before init",
+    "labels": "IMD gridded rainfall (active/break) + IMD RSMC best track (depressions)"
+  },
+  "validation_metrics": {
+    "R0_rule": {
+      "accuracy": 0.7055555555555556,
+      "balanced_accuracy": 0.5233487132525594,
+      "macro_f1": 0.534518510816694
+    },
+    "RF": {
+      "accuracy": 0.7388888888888889,
+      "balanced_accuracy": 0.4535197708274631,
+      "macro_f1": 0.49133279139085667
+    },
+    "LGBM": {
+      "accuracy": 0.6666666666666666,
+      "balanced_accuracy": 0.5631193059077675,
+      "macro_f1": 0.522184256825353
+    },
+    "CNN": {
+      "accuracy": 0.5361111111111111,
+      "balanced_accuracy": 0.5870168826899597,
+      "macro_f1": 0.46629225077266145
+    },
+    "reference_always_NORMAL": {
+      "accuracy": 0.7041666666666667,
+      "balanced_accuracy": 0.25,
+      "macro_f1": 0.20660146699266504
+    }
+  },
+  "classes": [
+    "NORMAL",
+    "ACTIVE",
+    "BREAK",
+    "MONSOON_DEPRESSION"
+  ],
+  "lgbm_rounds": 39,
+  "cnn_epochs": 10,
+  "cnn_map_channels": [
+    "u850",
+    "v850",
+    "vort850_1e5",
+    "mslp_hpa",
+    "pwat_mm"
+  ],
+  "rf_feature_importance": {
+    "fc_core_rain_mm": 0.09777905091065699,
+    "fc_core_anom": 0.14334291595588708,
+    "fc_west_coast_rain_mm": 0.03763372007823802,
+    "llj_u850": 0.044383839321296394,
+    "central_u850": 0.07574802490250021,
+    "trough_vort_max": 0.08449115248186727,
+    "trough_vort_mean": 0.06927271276727116,
+    "trough_mslp_min": 0.03826445498442869,
+    "mslp_south_minus_trough": 0.06904479738138533,
+    "core_pwat_mm": 0.0856913513466197,
+    "obs_core_anom_lag1": 0.0621609570713486,
+    "obs_core_anom_lag2": 0.03936493538717671,
+    "lead_day": 0.0032736930266476063,
+    "doy_sin": 0.08090304968345238,
+    "doy_cos": 0.06864534470122395
+  }
+}

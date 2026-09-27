@@ -125,8 +125,8 @@ Every prediction response carries `data_kind`, `model_version`, and the regime w
 | 1 | IMD date convention | ✅ Resolved: labelled by window END date (empirical, DATA_SOURCES §7) |
 | 2 | GEFSv12 layout, APCP accumulation, grid offsets | ✅ Resolved: 6-h buckets, exact grid match (DATA_SOURCES §2.1) |
 | 3 | Download size/time | ✅ Resolved: ≈2 s and ≈10 MB per init for Days 1–3 APCP |
-| 4 | Exact core-monsoon-zone polygon (Rajeevan et al. 2010) | Open — Phase 5 |
-| 5 | Survey-of-India-compliant district boundaries | Open — Phase 6 |
+| 4 | Core-monsoon-zone definition | ✅ Resolved: IITM operational description 18–28°N, 65–88°E over IMD land cells (config/regimes.yaml) |
+| 5 | Survey-of-India-based district boundaries | ✅ Resolved with caveats: DataMeet SoI index maps, Census-2011 districts (DATA_SOURCES §5) |
 
 Test-period hygiene: the 2018 IMD file and 40 GEFS 2018 Day-1 forecasts were inspected in Phase 3 to establish the
 date convention (a data-format question). No model or parameter was tuned on them. All further sanity checks

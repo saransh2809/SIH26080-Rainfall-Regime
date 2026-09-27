@@ -3,13 +3,13 @@
 #   derived    — published criterion applied outside its original scope
 #   heuristic  — our own rule; parameters must be sensitivity-tested
 
-synoptic:               # one label per day (country scale)
-  priority: [MONSOON_DEPRESSION, ACTIVE_MONSOON, BREAK_MONSOON, NORMAL]
+synoptic:               # one label per rain day (country scale)
+  priority: [MONSOON_DEPRESSION, ACTIVE, BREAK, NORMAL]
 
   active_break:
-    evidence: published  # Rajeevan et al. 2010, J. Earth Syst. Sci.
-    # Approximate core-monsoon-zone box from the paper's description.
-    # TODO(Phase 3): replace with the exact CMZ polygon from Rajeevan et al. 2010.
+    evidence: published  # Rajeevan, Gadgil & Bhate 2010, J. Earth Syst. Sci. 119(3)
+    # IITM's operational description of the monsoon core zone ("roughly 18-28N, 65-88E"),
+    # https://www.tropmet.res.in/erpas/files/active_break_selection.php ; IMD land cells only.
     core_zone_box: {lat_min: 18.0, lat_max: 28.0, lon_min: 65.0, lon_max: 88.0}
     anomaly_threshold: 1.0
     min_consecutive_days: 3
@@ -18,15 +18,29 @@ synoptic:               # one label per day (country scale)
     climatology_years: [1981, 2010]
 
   depression:
-    evidence: heuristic       # track sources are official/published; the radius is ours
-    sources: [imd_best_track, era5_lps_catalogue]
-    influence_radius_km: 500
+    evidence: heuristic       # official track, but the box is our choice (weakest link wins)
+    # IMD RSMC New Delhi best track (official grading, depression and stronger). The ERA5 LPS
+    # catalogue (Hunt, CC BY 4.0) finds a system on 50/52 IMD depression days in JJAS 2010-2015
+    # but usually grades it weaker, so IMD grading is used for the label.
+    source: imd_best_track
+    box: {lat_min: 12.0, lat_max: 30.0, lon_min: 68.0, lon_max: 92.0}
 
-local:                  # one label per grid cell per day
+classifier_features:    # boxes over which FORECAST fields are summarised (heuristic choices)
+  llj_box:        {lat_min: 5.0,  lat_max: 15.0, lon_min: 50.0, lon_max: 70.0}   # Arabian Sea low-level jet
+  central_box:    {lat_min: 15.0, lat_max: 25.0, lon_min: 70.0, lon_max: 85.0}   # monsoon westerlies
+  trough_box:     {lat_min: 15.0, lat_max: 28.0, lon_min: 75.0, lon_max: 92.0}   # monsoon trough / Bay head
+  south_box:      {lat_min: 8.0,  lat_max: 15.0, lon_min: 72.0, lon_max: 80.0}   # south peninsula
+  west_coast_box: {lat_min: 8.0,  lat_max: 20.0, lon_min: 72.0, lon_max: 76.0}   # west-coast rainfall
+  persistence_lags_days: [1, 2]   # observed core-zone anomaly known at forecast time (D0-1, D0-2)
+
+local:                  # one label per grid cell per forecast; computed from forecast-time data
   coastal:
     evidence: heuristic
     max_distance_to_coast_km: 100
   orographic:
     evidence: heuristic
-    min_elevation_gradient_m_per_km: 10
-    min_upslope_wind_ms: 2.0   # from FORECAST 850 hPa wind, not reanalysis
+    # Terrain-forced ascent w = V850 · grad(h) from the FORECAST 850 hPa wind and GEFS model terrain.
+    # 0.05 m/s chosen after inspecting one training-year date (2011-07-15): Western Ghats reach ~0.12,
+    # the Deccan interior ~0.03. A 10 m/km slope cut was rejected: model terrain smooths the Ghats to
+    # a 90th-percentile slope of 7.7 m/km. Sensitivity analysis pending.
+    min_forced_ascent_ms: 0.05

@@ -1,0 +1,56 @@
+{
+  "name": "C1",
+  "model_type": "LightGBM Tweedie regressor",
+  "package_version": "0.1.0",
+  "data_kind": "real",
+  "created_utc": "2026-09-27T20:54:55+00:00",
+  "features": [
+    "nwp_precip_mm",
+    "nwp_log1p",
+    "nwp_mean_3x3",
+    "nwp_max_3x3",
+    "nwp_mean_7x7",
+    "nwp_max_7x7",
+    "obs_climatology_mm",
+    "doy_sin",
+    "doy_cos",
+    "lat",
+    "lon",
+    "lead_day",
+    "elevation_m",
+    "coast_km",
+    "p_NORMAL",
+    "p_ACTIVE",
+    "p_BREAK",
+    "p_MONSOON_DEPRESSION",
+    "local_INLAND",
+    "local_COASTAL",
+    "local_OROGRAPHIC"
+  ],
+  "training_period": [
+    2010,
+    2015
+  ],
+  "validation_period": [
+    2016,
+    2017
+  ],
+  "test_period_used": false,
+  "data_sources": {
+    "regime_probabilities": "LGBM out-of-fold"
+  },
+  "validation_metrics": {
+    "1": {
+      "rmse": 13.245274586449092,
+      "bias": -0.1904427703561799
+    },
+    "2": {
+      "rmse": 13.762742617193071,
+      "bias": -0.2656202323225073
+    },
+    "3": {
+      "rmse": 14.12474450683283,
+      "bias": -0.25880554953472407
+    }
+  }
+}
