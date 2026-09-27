@@ -25,6 +25,18 @@
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
+  /* Ordinal map ramps, validated (dataviz validate_palette.js --ordinal) against #ffffff / #152036.
+     The lowest class (dry / near-climatology) has no fill: colour appears only where something happens. */
+  --rain-1: #86b6ef;
+  --rain-2: #5598e7;
+  --rain-3: #2a78d6;
+  --rain-4: #1c5cab;
+  --rain-5: #0d366b;
+  --prob-1: #f2a37a;
+  --prob-2: #eb7d4a;
+  --prob-3: #d95926;
+  --prob-4: #a8421a;
+  --prob-5: #6e2a10;
   --font-sans: 'Fira Sans', system-ui, sans-serif;
   --font-mono: 'Fira Code', ui-monospace, monospace;
 }
@@ -49,6 +61,16 @@
     --map-state: #cbd5e1;
     --map-district: #475569;
     --map-selected: #8fb3ff;
+    --rain-1: #184f95;
+    --rain-2: #256abf;
+    --rain-3: #3987e5;
+    --rain-4: #6da7ec;
+    --rain-5: #b7d3f6;
+    --prob-1: #9c3d16;
+    --prob-2: #c9511f;
+    --prob-3: #eb7d4a;
+    --prob-4: #f4a980;
+    --prob-5: #fbd6c2;
   }
 }
 

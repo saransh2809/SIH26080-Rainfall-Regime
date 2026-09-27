@@ -64,3 +64,45 @@ class HeavyRainModel:
         (directory / f"{self.name}.json").write_text(
             json.dumps({"threshold_mm": self.threshold_mm, "features": self.features, "rounds": self.rounds}),
             encoding="utf-8")
+
+
+class IsotonicCalibrator:
+    """Monotone map from a model's probability to observed event frequency.
+
+    Must be fitted on OUT-OF-FOLD predictions (the model never saw those rows), otherwise it learns
+    the model's in-sample over-confidence instead of its real error.
+    """
+
+    def __init__(self) -> None:
+        from sklearn.isotonic import IsotonicRegression
+
+        self.iso = IsotonicRegression(y_min=0.0, y_max=1.0, out_of_bounds="clip")
+
+    def fit(self, p_oof: np.ndarray, outcome: np.ndarray) -> IsotonicCalibrator:
+        self.iso.fit(p_oof, outcome)
+        return self
+
+    def transform(self, p: np.ndarray) -> np.ndarray:
+        return np.clip(self.iso.predict(p), 0.0, 1.0)
+
+    def save(self, path: Path) -> None:
+        path.write_text(json.dumps({"x": self.iso.X_thresholds_.tolist(), "y": self.iso.y_thresholds_.tolist()}),
+                        encoding="utf-8")
+
+    @staticmethod
+    def load_transform(path: Path):
+        table = json.loads(path.read_text(encoding="utf-8"))
+        x, y = np.array(table["x"]), np.array(table["y"])
+        return lambda p: np.clip(np.interp(p, x, y), 0.0, 1.0)
+
+
+def out_of_fold_probabilities(model: HeavyRainModel, train: pd.DataFrame, years: pd.Series) -> np.ndarray:
+    """Leave-one-year-out predictions with the model's chosen round count (no re-tuning per fold)."""
+    if model.rounds is None:
+        raise RuntimeError("fit the model first so the round count is known")
+    oof = np.full(len(train), np.nan)
+    for year in np.unique(years):
+        held = (years == year).to_numpy()
+        booster = lgb.train(model.params, model._data(train[~held]), num_boost_round=model.rounds)
+        oof[held] = booster.predict(train.loc[held, model.features].astype(np.float32))
+    return oof

@@ -15,6 +15,7 @@ models/**/*.joblib
 models/**/*.txt
 models/**/*.pt
 models/**/*.npz
+data/products/
 !data/demo/
 
 # Frontend

@@ -27,6 +27,8 @@ const MODEL_LABELS: Record<string, string> = {
   A_raw_nwp: 'Raw NWP',
   B1_quantile_mapping: 'Quantile mapping',
   B2_global_lgbm: 'Global LightGBM',
+  C1_regime_features: 'Regime-aware C1',
+  C2_regime_split: 'Regime-split C2',
 }
 
 function bestIndex(values: (number | null | undefined)[], better: Direction): number {
@@ -41,17 +43,17 @@ function bestIndex(values: (number | null | undefined)[], better: Direction): nu
 }
 
 /** Real validation scores; undefined scores show "n/a", never 0. */
-export function VerificationPanel({ report, title }: { report: VerificationReport; title: string }) {
+export function VerificationPanel({ report, title, models: only }: { report: VerificationReport; title: string; models?: string[] }) {
   const leads = Object.keys(report.results)
   const [lead, setLead] = useState(leads[0])
   const byModel = report.results[lead]
-  const models = Object.keys(byModel)
+  const models = Object.keys(byModel).filter((m) => !only || only.includes(m))
 
   return (
     <section className="panel" aria-labelledby="verif-title">
       <h2 id="verif-title">{title}</h2>
       <p className="muted">{report.scope} · data: {report.data_kind.toUpperCase()}</p>
-      <div className="segmented" role="group" aria-label="Lead day">
+      <div className="segmented" role="group" aria-label="Verification lead day">
         {leads.map((l) => (
           <button key={l} type="button" aria-pressed={l === lead} onClick={() => setLead(l)}>
             Day {l}

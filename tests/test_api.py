@@ -43,3 +43,17 @@ def test_geo_layers_are_whitelisted() -> None:
 def test_model_info_lists_every_model() -> None:
     body = client.get("/model-info").json()
     assert "global_lgbm" in body and "regime_classifier" in body
+
+
+def test_forecast_rejects_malformed_date_and_unknown_variable() -> None:
+    assert client.get("/forecast/not-a-date").status_code == 422
+    assert client.get("/forecast/2017-08-28/grid", params={"var": "secret", "lead": 1}).status_code == 422
+    assert client.get("/forecast/2017-08-28/grid", params={"var": "raw_mm", "lead": 99}).status_code == 422
+
+
+def test_missing_product_is_404_not_invented() -> None:
+    assert client.get("/forecast/1999-01-01").status_code == 404
+
+
+def test_products_endpoint_returns_list() -> None:
+    assert isinstance(client.get("/products").json(), list)

@@ -228,9 +228,22 @@ scored as 0/1 exceedances.
 - **Regime information significantly improves the heavy-rain Brier score** (P_regime vs P_blind: +0.000065,
   95% CI [+0.000004, +0.000121]); small in absolute terms, as expected for a 1.4% base rate.
 - Reliability ≥ 64.5 mm is good up to 0.5 (e.g. forecast 0.243 → observed 0.226), slightly over-confident at 0.5–0.6.
-- **≥ 115.6 mm probabilities are over-confident** (forecast 0.43 → observed 0.20) despite AUC 0.87, and skill is ~0 by
-  lead 3; the regime difference is not significant. They must be recalibrated (e.g. isotonic regression fitted on a
-  held-out training year) before being shown as probabilities.
+- **≥ 115.6 mm probabilities were over-confident** (forecast 0.43 → observed 0.20) despite AUC 0.87, and skill is ~0 by
+  lead 3; the regime difference is not significant.
+
+**Recalibration.** Isotonic regression fitted on leave-one-year-out (out-of-fold) predictions over the six training
+years, applied to the final model; validation years untouched by fitting.
+
+| | Brier skill | ROC AUC | Reliability example |
+|---|---|---|---|
+| Heavy, uncalibrated (**used**) | 0.0666 | 0.858 | 0.34 → 0.33 |
+| Heavy, calibrated | 0.0664 (difference n.s.) | 0.848 | — |
+| Very heavy, uncalibrated | 0.0133 | 0.873 | 0.43 → 0.19 (over-confident) |
+| Very heavy, calibrated (**used**) | 0.0227 (significantly better) | 0.782 | 0.24 → 0.19 |
+
+Heavy probabilities were already reliable, so calibration only cost discrimination (isotonic steps create ties) and is
+not applied. Very-heavy probabilities are shown calibrated: a probability on a warning map must mean what it says, and
+the price — lower ranking skill — is reported, not hidden. Setting: `config/models.yaml → heavy_rain.calibrate`.
 
 ### 6.4 Overall answer to the problem statement's hypothesis (validation years)
 
@@ -247,3 +260,19 @@ Area-weighted mean over the 0.25° IMD land cells overlapping each Census-2011 d
 equal-area projection, EPSG:6933); the maximum over overlapping cells for heavy-rain probability. 608 of 641 districts are
 ≥ 95% covered; the island districts (Andaman & Nicobar, Lakshadweep) have no IMD cells and return no value; Chennai is
 4.5% covered and flagged.
+
+## 8. Forecast products and dashboard
+
+- One product per 00 UTC initialisation (`data/products/`), built only from saved artifacts: grids (raw, C1 corrected,
+  quantile-mapped, heavy/very-heavy probability, local regime), the district table, regime probabilities, and an
+  explanation assembled from the corrector's own SHAP contributions and validation scores — no hand-written text.
+- Observed IMD rainfall is stored as a separate, labelled variable for verification and is never an input.
+- `scripts/build_products.py` refuses test-year dates without `--final-test`. Products so far: 24–31 Aug 2017
+  (validation). The Aug 2018 Kerala case will be produced together with the one-time test evaluation.
+- Map colours: IMD rainfall categories on a single-hue blue ramp and rare-event probability bins on a single-hue orange
+  ramp, each validated for light and dark surfaces (ordinal checks: monotone lightness, visible steps, contrast). The
+  lowest class is unfilled so colour appears only where something happens.
+
+Validation case (not test): Mumbai, rain day ending 08:30 IST 30 Aug 2017, observed district mean 162 mm. Lead-1 raw 55 mm,
+C1 58 mm, QM 81 mm — every amount forecast under-estimates the extreme — while P(≥ 64.5 mm) = 0.51, about 35× the
+climatological rate, and the predicted regime was ACTIVE (0.54), matching the observed label.

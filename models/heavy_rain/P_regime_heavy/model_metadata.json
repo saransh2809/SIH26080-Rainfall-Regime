@@ -3,7 +3,7 @@
   "model_type": "LightGBM binary (log-loss, unweighted)",
   "package_version": "0.1.0",
   "data_kind": "real",
-  "created_utc": "2026-09-27T20:59:24+00:00",
+  "created_utc": "2026-09-27T21:17:20+00:00",
   "features": [
     "nwp_precip_mm",
     "nwp_log1p",

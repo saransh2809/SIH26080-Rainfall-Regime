@@ -27,7 +27,12 @@ import xarray as xr
 
 from rainpp.config import PROJECT_ROOT, load_settings, load_yaml
 from rainpp.data.sources.imd import IMDGridded
-from rainpp.models.heavy_rain import HeavyRainModel, fit_event_climatology
+from rainpp.models.heavy_rain import (
+    HeavyRainModel,
+    IsotonicCalibrator,
+    fit_event_climatology,
+    out_of_fold_probabilities,
+)
 from rainpp.models.quantile_mapping import QuantileMapping
 from rainpp.models.registry import write_metadata
 from rainpp.regimes.augment import LOCAL_COLS, PROB_COLS, load_augmented, synoptic_probabilities
@@ -70,7 +75,7 @@ def main() -> None:
     base = mcfg["features"] + mcfg["regime_correction"]["static_features"]
     params = mcfg["global_lgbm"]["params"]
     inner, stop = train["valid_date"].dt.year < tr1, train["valid_date"].dt.year == tr1
-    results, significance, saved = {}, {}, {}
+    results, significance, saved, calibrators = {}, {}, {}, {}
     for name in tcfg["probability_targets"]:
         t = float(tcfg["thresholds_mm"][name])
         clim_col = f"clim_p_ge_{t}"
@@ -88,6 +93,15 @@ def main() -> None:
             saved[(name, model_name)] = model
             log.info("%s %s: %d rounds", name, model_name, model.rounds)
 
+        # Isotonic recalibration of P_regime, fitted on leave-one-year-out training predictions only.
+        regime_model = saved[(name, "P_regime")]
+        oof = out_of_fold_probabilities(regime_model, train, train["valid_date"].dt.year)
+        calibrator = IsotonicCalibrator().fit(oof, (train["obs_precip_mm"].to_numpy() >= t).astype(float))
+        preds["P_regime_cal"] = calibrator.transform(preds["P_regime"])
+        valid[f"p_P_regime_cal_{name}"] = preds["P_regime_cal"]
+        calibrators[name] = calibrator
+        log.info("%s P_regime isotonic calibrator fitted on %d out-of-fold training rows", name, len(oof))
+
         outcome = (valid["obs_precip_mm"].to_numpy() >= t).astype(float)
         results[name] = {"threshold_mm": t, "all": {m: probability_scores(p, outcome, preds["CLIM"])
                                                     for m, p in preds.items()}}
@@ -99,6 +113,8 @@ def main() -> None:
         significance[name] = {
             "P_regime vs P_blind": block_bootstrap_difference(valid, brier, f"p_P_blind_{name}", f"p_P_regime_{name}",
                                                                **mcfg["regime_correction"]["bootstrap"]),
+            "P_regime_cal vs P_regime": block_bootstrap_difference(
+                valid, brier, f"p_P_regime_{name}", f"p_P_regime_cal_{name}", **mcfg["regime_correction"]["bootstrap"]),
         }
 
     reports = PROJECT_ROOT / "reports"
@@ -118,6 +134,8 @@ def main() -> None:
                        data_sources={"target": "IMD gridded rainfall >= threshold"},
                        validation_metrics={k: s[k] for k in ("brier", "bss_vs_climatology", "roc_auc")},
                        extra={"threshold_mm": model.threshold_mm, "rounds": model.rounds})
+        if model_name == "P_regime":
+            calibrators[name].save(out / "isotonic_calibration.json")
 
 
 def to_markdown(results: dict, significance: dict, va0: int, va1: int) -> str:
@@ -137,8 +155,8 @@ def to_markdown(results: dict, significance: dict, va0: int, va1: int) -> str:
             verdict = "significant" if res["significant"] else "not significant"
             lines += ["", (f"Brier improvement {comp}: {res['improvement']:.6f}, 95% CI "
                            f"[{res['ci95_low']:.6f}, {res['ci95_high']:.6f}] — {verdict}")]
-        lines += ["", "Reliability of P_regime (forecast bin → mean forecast / observed frequency / count):", ""]
-        for row in r["all"]["P_regime"]["reliability"]:
+        lines += ["", "Reliability of P_regime_cal (forecast bin → mean forecast / observed frequency / count):", ""]
+        for row in r["all"]["P_regime_cal"]["reliability"]:
             if row["n"]:
                 lines.append(f"- {row['bin'][0]:.1f}–{row['bin'][1]:.1f}: {row['mean_forecast']:.3f} / "
                              f"{row['observed_frequency']:.3f} / {row['n']:,}")

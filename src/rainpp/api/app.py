@@ -6,17 +6,19 @@ fixed directory plus a validated identifier.
 from __future__ import annotations
 
 import json
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from rainpp import __version__
 from rainpp.config import PROJECT_ROOT, Settings, load_settings, load_yaml
 
 REPORT_PHASES = Literal["phase4", "phase5", "phase6", "phase6b", "phase7"]
+GRID_VAR = Literal["raw_mm", "corrected_mm", "qm_mm", "p_heavy", "p_very_heavy", "local_regime", "observed_mm"]
 MODEL_NAMES = ("quantile_mapping", "global_lgbm", "regime_classifier", "regime_bc/C1", "regime_bc/B2s")
 
 
@@ -111,6 +113,48 @@ def create_app() -> FastAPI:
     @app.get("/verification/{phase}")
     def verification(phase: REPORT_PHASES) -> dict:
         return _read_json(PROJECT_ROOT / "reports" / f"{phase}_validation.json")
+
+    products_dir = s.paths.data_dir / "products"
+
+    def product_file(init: date, suffix: str) -> Path:
+        path = products_dir / f"{init.isoformat()}{suffix}"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail=f"no forecast product for {init}")
+        return path
+
+    @app.get("/products")
+    def products() -> list[str]:
+        if not products_dir.is_dir():
+            return []
+        return sorted(p.name.removesuffix(".json") for p in products_dir.glob("????-??-??.json"))
+
+    @app.get("/forecast/{init}")
+    def forecast(init: date) -> dict:
+        return json.loads(product_file(init, ".json").read_text(encoding="utf-8"))
+
+    @app.get("/forecast/{init}/districts")
+    def forecast_districts(init: date, lead: int = Query(1, ge=1, le=10)) -> list[dict]:
+        import pandas as pd
+
+        table = pd.read_parquet(product_file(init, ".districts.parquet"))
+        table = table[table["lead_day"] == lead]
+        if table.empty:
+            raise HTTPException(status_code=404, detail=f"lead {lead} not in product")
+        table = table.assign(valid_date=table["valid_date"].astype(str))
+        return json.loads(table.to_json(orient="records"))
+
+    @app.get("/forecast/{init}/grid")
+    def forecast_grid(init: date, var: GRID_VAR, lead: int = Query(1, ge=1, le=10)) -> dict:
+        import numpy as np
+        import xarray as xr
+
+        with xr.open_dataset(product_file(init, ".nc")) as ds:
+            if lead not in ds.lead_day.values:
+                raise HTTPException(status_code=404, detail=f"lead {lead} not in product")
+            field = ds[var].sel(lead_day=lead).load()
+        values = np.where(np.isnan(field.values), None, np.round(field.values.astype(float), 3)).tolist()
+        return {"var": var, "lead_day": lead, "lat": field.lat.values.tolist(), "lon": field.lon.values.tolist(),
+                "values": values, "note": field.attrs.get("note", "")}
 
     return app
 

@@ -43,3 +43,20 @@ def test_event_climatology_is_a_frequency() -> None:
     clim = fit_event_climatology(xr.DataArray(rain, dims=("time", "lat", "lon"), coords={"time": time}), 64.5)
     assert clim.sel(dayofyear=196).item() > 0.9   # mid-July; the ±15-day window reaches 30 June
     assert clim.sel(dayofyear=250).item() == pytest.approx(0.0)
+
+
+def test_isotonic_calibration_fixes_overconfidence(tmp_path) -> None:
+    from rainpp.models.heavy_rain import IsotonicCalibrator
+
+    rng = np.random.default_rng(5)
+    p_true = rng.uniform(0, 0.4, 100_000)
+    outcome = (rng.uniform(0, 1, p_true.size) < p_true).astype(float)
+    overconfident = np.clip(p_true * 2.0, 0, 1)                   # says 0.6 when the truth is 0.3
+    cal = IsotonicCalibrator().fit(overconfident[:50_000], outcome[:50_000])
+    fixed = cal.transform(overconfident[50_000:])
+    for row in reliability_table(fixed, outcome[50_000:], bins=5):
+        if row["n"] > 2_000:
+            assert row["observed_frequency"] == pytest.approx(row["mean_forecast"], abs=0.03)
+    cal.save(tmp_path / "cal.json")
+    np.testing.assert_allclose(IsotonicCalibrator.load_transform(tmp_path / "cal.json")(overconfident[:10]),
+                               cal.transform(overconfident[:10]), atol=1e-9)

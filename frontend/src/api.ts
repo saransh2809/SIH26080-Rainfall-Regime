@@ -45,6 +45,41 @@ export interface VerificationReport {
 
 export type GeoJson = GeoJSON.FeatureCollection
 
+export interface LeadSummary {
+  valid_date: string
+  predicted_regime: string
+  regime_confidence: number
+  regime_probabilities: Record<string, number>
+  validation_rmse_mm: { raw: number; corrected: number } | null
+  top_correction_features: { feature: string; share: number }[]
+}
+
+export interface ForecastSummary {
+  init_date: string
+  data_kind: string
+  mode: string
+  system: string
+  correction_model: string
+  heavy_rain_model: string
+  classifier: string
+  leads: Record<string, LeadSummary>
+}
+
+export interface DistrictForecast {
+  district_id: number
+  district_name: string
+  state_name: string
+  coverage_fraction: number
+  lead_day: number
+  valid_date: string
+  raw_mm: number | null
+  corrected_mm: number | null
+  qm_mm: number | null
+  observed_mm: number | null
+  p_heavy_max: number | null
+  p_very_heavy_max: number | null
+}
+
 export class ApiError extends Error {
   readonly status: number
   constructor(status: number, message: string) {
@@ -67,4 +102,7 @@ export const api = {
   districts: () => get<District[]>('/districts'),
   geo: (layer: 'states' | 'districts') => get<GeoJson>(`/geo/${layer}`),
   verification: (phase: 'phase4' | 'phase5' | 'phase6' | 'phase7') => get<VerificationReport>(`/verification/${phase}`),
+  products: () => get<string[]>('/products'),
+  forecast: (init: string) => get<ForecastSummary>(`/forecast/${init}`),
+  forecastDistricts: (init: string, lead: number) => get<DistrictForecast[]>(`/forecast/${init}/districts?lead=${lead}`),
 }

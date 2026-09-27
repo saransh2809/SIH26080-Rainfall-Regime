@@ -35,7 +35,7 @@ describe('VerificationPanel', () => {
 
   it('switches lead day', () => {
     render(<VerificationPanel report={report} title="t" />)
-    fireEvent.click(screen.getByRole('button', { name: 'Day 2' }))
+    fireEvent.click(screen.getByRole("button", { name: "Day 2" }))
     expect(screen.getByRole('button', { name: 'Day 2' })).toHaveAttribute('aria-pressed', 'true')
     expect(within(screen.getByRole('row', { name: /RMSE/ })).getByText('16.000')).toHaveClass('best')
   })

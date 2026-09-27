@@ -190,3 +190,156 @@ table.scores td.best {
 .kv dd {
   margin: 0;
 }
+
+.app {
+  grid-template-rows: auto auto 1fr;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.control select {
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.map-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.map-footer .map-caption {
+  border-top: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.legend {
+  margin: 0;
+  font-size: 12px;
+}
+
+.legend figcaption {
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+.legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.regime-headline {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+}
+
+.bars {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.bars li {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) 2fr 44px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.bar-track {
+  height: 8px;
+  background: var(--surface-muted);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--rain-3);
+  border-radius: 4px;
+}
+
+.bar-value {
+  text-align: right;
+}
+
+.district-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+tr.observed-row th,
+tr.observed-row td {
+  border-top: 2px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* Narrow screens: one naturally scrolling column instead of a fixed-height split. */
+@media (max-width: 1024px) {
+  .app {
+    display: block;
+    height: auto;
+  }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .map-panel {
+    height: 70vh;
+    min-height: 420px;
+  }
+
+  .side {
+    overflow: visible;
+  }
+}

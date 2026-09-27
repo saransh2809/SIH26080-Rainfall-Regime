@@ -74,6 +74,13 @@ regime_correction:
   c2_min_rows: 200000       # regimes with fewer training rows use the pooled model
   bootstrap: {block_days: 5, n_boot: 200}
 
+heavy_rain:
+  # Isotonic calibration (fitted on out-of-fold training predictions), chosen on validation 2016-2017:
+  #   heavy: already reliable; calibration leaves Brier unchanged (n.s.) and lowers AUC 0.858 -> 0.848
+  #   very_heavy: raw model over-confident (0.43 -> 0.19 observed); calibration improves Brier
+  #               significantly (BSS 0.013 -> 0.023) at the cost of AUC 0.873 -> 0.782
+  calibrate: {heavy: false, very_heavy: true}
+
 evaluation:
   fss_threshold_mm: [15.6, 64.5]
   fss_window_cells: [1, 5, 9, 17]   # 0.25°, 1.25°, 2.25°, 4.25°
