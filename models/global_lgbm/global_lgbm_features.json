@@ -1,0 +1,1 @@
+["nwp_precip_mm", "nwp_log1p", "nwp_mean_3x3", "nwp_max_3x3", "nwp_mean_7x7", "nwp_max_7x7", "obs_climatology_mm", "doy_sin", "doy_cos", "lat", "lon", "lead_day"]

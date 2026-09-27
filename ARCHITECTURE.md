@@ -118,10 +118,16 @@ Switch via `mode` in `config/settings.yaml` or `RAINPP_MODE`. The core applicati
 
 Every prediction response carries `data_kind`, `model_version`, and the regime with its confidence.
 
-## 9. Open verification items (must be resolved in Phase 3, not assumed)
+## 9. Verification items
 
-1. IMD gridded date convention: which calendar date labels the 24 h ending 03 UTC.
-2. GEFSv12 reforecast file layout, variable names, APCP accumulation type (bucket vs running) and grid offsets.
-3. Real per-file download size and time → final choice of years/variables within disk limits.
-4. Exact core-monsoon-zone polygon from Rajeevan et al. (2010) (config currently holds an approximate box).
-5. District boundary source compliant with Survey of India depiction.
+| # | Item | Status |
+|---|---|---|
+| 1 | IMD date convention | ✅ Resolved: labelled by window END date (empirical, DATA_SOURCES §7) |
+| 2 | GEFSv12 layout, APCP accumulation, grid offsets | ✅ Resolved: 6-h buckets, exact grid match (DATA_SOURCES §2.1) |
+| 3 | Download size/time | ✅ Resolved: ≈2 s and ≈10 MB per init for Days 1–3 APCP |
+| 4 | Exact core-monsoon-zone polygon (Rajeevan et al. 2010) | Open — Phase 5 |
+| 5 | Survey-of-India-compliant district boundaries | Open — Phase 6 |
+
+Test-period hygiene: the 2018 IMD file and 40 GEFS 2018 Day-1 forecasts were inspected in Phase 3 to establish the
+date convention (a data-format question). No model or parameter was tuned on them. All further sanity checks
+use training years only.

@@ -30,9 +30,11 @@ Rule: role **B** and **C** data must never appear as model *inputs* at inference
 | Type | **Forecast** (retrospective runs of a fixed model version) |
 | Period | 2000–2019 (**Verified**) |
 | Runs | Daily 00 UTC, 5 members; weekly 11 members to +35 days (**Verified**) |
-| Resolution | 0.25° for days 1–10, coarser beyond (**Secondary** — confirm from description PDF) |
+| Resolution | Global 0.25° (721 × 1440) for days 1–10 (**Verified**, Phase 3). Grid nodes coincide exactly with the IMD grid. |
 | Variables | APCP (accumulated precipitation) plus pressure-level / surface fields (winds, humidity, PWAT, MSLP, etc.) |
-| Format | GRIB2, one file per variable/member/init |
+| Format | GRIB2, one file per variable/member/init: `GEFSv12/reforecast/{YYYY}/{YYYYMMDD}00/{member}/Days:1-10/{var}_{level}_{YYYYMMDD}00_{member}.grib2`, each with a `.idx` byte-offset index (**Verified**) |
+| APCP storage | 6-hour buckets: messages alternate `6k→6k+3` and `6k→6k+6` hour totals. Packed to 0.01–0.1 mm steps, so differencing leaves negatives down to −0.10 mm, which are clipped to 0 (**Verified**) |
+| Measured cost | Days 1–3 of APCP ≈ 10 MB per init via byte-range requests; ≈ 2 s per init with 8 parallel requests; ≈ 70 kB per init-lead after cropping to India |
 | Access | Anonymous HTTPS/S3, no login — programmatic (**Verified**) |
 | License | NOAA open data (public domain, US Gov) |
 | India suitable | Yes (global) |
@@ -73,8 +75,9 @@ ERA5 precipitation comes from short-range (≤18 h) forecasts that are heavily c
 | Type | **Observation** (gauge-based analysis, Pai et al. 2014, MAUSAM) |
 | Period | 1901–2024 (**Verified**) |
 | Grid | 0.25°, 135 × 129 points, 6.5°N–38.5°N, 66.5°E–100.0°E (**Verified**) |
-| Rain day | 24 h ending 03 UTC (08:30 IST) — see alignment note §6 (**Secondary**, confirm in Pai et al. paper) |
-| Access | Free download, yearly files; Python package [`imdlib`](https://imdlib.readthedocs.io/en/latest/Usage.html) automates it |
+| Rain day | 24 h ending 03 UTC (08:30 IST), **labelled by the date the window ends** (**Verified empirically**, Phase 3 — see §7) |
+| Access | Free. Yearly NetCDF via `POST https://imdpune.gov.in/cmpg/Griddata/RF25.php` with form field `RF25=<year>` (≈25 MB/year). The server drops connections intermittently; the downloader retries. (**Verified**) |
+| File layout | `RAINFALL` (mm) on `TIME`, `LATITUDE`, `LONGITUDE`; cells outside India are NaN; no negative values (**Verified**, 2010–2018 files) |
 | District suitable | Yes (0.25° ≈ 27 km; aggregate by area weighting) |
 
 ### 3.2 NCMRWF–IMD merged satellite-gauge rainfall (GPM) — recent / real-time truth
@@ -130,15 +133,16 @@ IMD 24-hour rainfall categories (**Secondary** — confirm against IMD's officia
 
 ## 7. Alignment rules (critical)
 
-1. **Rain-day mismatch.** IMD rainfall is the 24 h ending 03 UTC. From a 00 UTC forecast, the matching Day-1 total is `APCP(+27 h) − APCP(+3 h)`, Day-2 is `+51 h − +27 h`, and so on. A plain `00→24 h` sum is misaligned by 3 hours.
-2. **Grid.** GEFS 0.25° and IMD 0.25° grids must be checked for cell-centre offsets before any comparison; regrid conservatively if they differ.
-3. **Only fields available at forecast time go into the model.**
+1. **Rain-day window.** IMD rainfall is the 24 h ending 03 UTC. From a 00 UTC forecast, lead day N covers forecast hours (24N−21, 24N+3]: Day 1 = hours 3→27. Because APCP is stored in 6-hour buckets, the total is built from 3-hour increments: Day 1 = [(0–6) − (0–3)] + (6–12) + (12–18) + (18–24) + (24–27).
+2. **Date label.** IMD labels each rain day by its END date, so `valid_date = init_date + N`. Evidence: across 40 JJAS-2018 forecasts, GEFS rainfall for 03 UTC D → 03 UTC D+1 matched IMD date D+1 best (mean spatial correlation 0.43 vs 0.34 for D and 0.32 for D+2; D+1 beat D in 30/40 cases). No authoritative IMD statement was found, so this is recorded as an empirical finding.
+3. **Grid.** GEFS and IMD 0.25° nodes coincide exactly (6.5–38.5°N, 66.5–100.0°E). Pairing refuses mismatched grids rather than silently regridding.
+4. **Only fields available at forecast time go into the model.**
 
 ## 8. Practical constraints found during research
 
-- **Disk:** drive E: has ~6 GB free. Global GRIB files must be streamed, cropped to India (≈1.7% of the global grid), and discarded immediately. Only India subsets are stored.
-- **Download volume:** the number of files needed is large (20 seasons × ~122 days × leads × variables). A single-file size/time benchmark is the first step of Phase 3, before committing to a date range.
-- **GRIB on Windows:** reading GRIB2 needs ecCodes; install path to be verified in Phase 3 (no conda is installed).
+- **Disk:** GRIB data is streamed with byte-range requests and cropped to India in memory; only India subsets are stored (APCP for 10 seasons × 3 leads ≈ 250 MB).
+- **Download volume:** measured, see §2.1. Pressure-level fields (winds) are 20–50× larger per init than APCP; only selected levels/steps will be fetched (Phase 5).
+- **GRIB on Windows:** ecCodes 2.48 installs from pip wheels and works without conda (**Verified**).
 
 ## 9. Not available / open requests
 

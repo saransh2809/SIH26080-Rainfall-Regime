@@ -14,6 +14,7 @@ data/processed/
 models/**/*.joblib
 models/**/*.txt
 models/**/*.pt
+models/**/*.npz
 !data/demo/
 
 # Frontend
@@ -29,3 +30,6 @@ frontend/dist/
 Thumbs.db
 .vscode/
 .idea/
+
+# Logs
+logs/

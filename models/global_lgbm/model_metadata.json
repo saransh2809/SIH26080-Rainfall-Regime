@@ -1,0 +1,77 @@
+{
+  "name": "global_lgbm",
+  "model_type": "LightGBM Tweedie regressor",
+  "package_version": "0.1.0",
+  "data_kind": "real",
+  "created_utc": "2026-09-27T19:41:50+00:00",
+  "features": [
+    "nwp_precip_mm",
+    "nwp_log1p",
+    "nwp_mean_3x3",
+    "nwp_max_3x3",
+    "nwp_mean_7x7",
+    "nwp_max_7x7",
+    "obs_climatology_mm",
+    "doy_sin",
+    "doy_cos",
+    "lat",
+    "lon",
+    "lead_day"
+  ],
+  "training_period": [
+    2010,
+    2015
+  ],
+  "validation_period": [
+    2016,
+    2017
+  ],
+  "test_period_used": false,
+  "data_sources": {
+    "forecast": "NOAA GEFSv12 reforecast, control member",
+    "observation": "IMD 0.25 deg gridded rainfall (Pai et al. 2014)"
+  },
+  "validation_metrics": {
+    "1": {
+      "rmse": 13.288354738149966,
+      "bias": -0.23467889592351093
+    },
+    "2": {
+      "rmse": 13.838618196671227,
+      "bias": -0.2658138869915339
+    },
+    "3": {
+      "rmse": 14.217731486432681,
+      "bias": -0.2028799861042272
+    }
+  },
+  "boosting_rounds": 131,
+  "rounds_chosen_on_year": 2015,
+  "params": {
+    "objective": "tweedie",
+    "tweedie_variance_power": 1.5,
+    "learning_rate": 0.05,
+    "num_leaves": 63,
+    "min_data_in_leaf": 500,
+    "feature_fraction": 0.9,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "lambda_l2": 1.0,
+    "verbose": -1,
+    "seed": 42
+  },
+  "feature_importance_gain_share": {
+    "nwp_precip_mm": 0.001016040607466865,
+    "nwp_log1p": 0.00014983051903914938,
+    "nwp_mean_3x3": 0.005763389606825148,
+    "nwp_max_3x3": 0.0010513583899860986,
+    "nwp_mean_7x7": 0.595649526176584,
+    "nwp_max_7x7": 0.18907330256337593,
+    "obs_climatology_mm": 0.09545963093889989,
+    "doy_sin": 0.03274647750042002,
+    "doy_cos": 0.0187218009451354,
+    "lat": 0.024640111775919488,
+    "lon": 0.029024221330913442,
+    "lead_day": 0.006704309645434604
+  }
+}

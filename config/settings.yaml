@@ -21,7 +21,8 @@ forecast:
   init_hour_utc: 0
   lead_days: [1, 2, 3]
   members: [c00]        # control only for the screening prototype
-  # IMD rain day ends at 03 UTC; Day-N total from a 00 UTC run = APCP(24N+3) - APCP(24(N-1)+3)
+  # IMD rain day = 24 h ending 03 UTC, labelled by its END date (verified empirically, Phase 3).
+  # Lead N from a 00 UTC run = forecast hours (24N-21, 24N+3], valid_date = init_date + N.
   rain_day_end_hour_utc: 3
 
 observation:

@@ -14,9 +14,9 @@ LON = np.array([76.0, 76.25])
 
 
 def make_observation(kind: str = "synthetic", values: np.ndarray | None = None) -> xr.Dataset:
-    time = pd.date_range("2018-08-01", periods=2)
     if values is None:
-        values = np.full((len(time), LAT.size, LON.size), 5.0)
+        values = np.full((2, LAT.size, LON.size), 5.0)
+    time = pd.date_range("2018-08-01", periods=values.shape[0])
     return xr.Dataset(
         {PRECIP_VAR: (("time", "lat", "lon"), values)},
         coords={"time": time, "lat": LAT, "lon": LON},
