@@ -1,0 +1,32 @@
+# Regime labelling. Each rule states its evidence level:
+#   published  — criterion taken from peer-reviewed / operational literature
+#   derived    — published criterion applied outside its original scope
+#   heuristic  — our own rule; parameters must be sensitivity-tested
+
+synoptic:               # one label per day (country scale)
+  priority: [MONSOON_DEPRESSION, ACTIVE_MONSOON, BREAK_MONSOON, NORMAL]
+
+  active_break:
+    evidence: published  # Rajeevan et al. 2010, J. Earth Syst. Sci.
+    # Approximate core-monsoon-zone box from the paper's description.
+    # TODO(Phase 3): replace with the exact CMZ polygon from Rajeevan et al. 2010.
+    core_zone_box: {lat_min: 18.0, lat_max: 28.0, lon_min: 65.0, lon_max: 88.0}
+    anomaly_threshold: 1.0
+    min_consecutive_days: 3
+    original_months: [7, 8]
+    extended_months: [6, 9]   # evidence: derived — labels in these months flagged
+    climatology_years: [1981, 2010]
+
+  depression:
+    evidence: heuristic       # track sources are official/published; the radius is ours
+    sources: [imd_best_track, era5_lps_catalogue]
+    influence_radius_km: 500
+
+local:                  # one label per grid cell per day
+  coastal:
+    evidence: heuristic
+    max_distance_to_coast_km: 100
+  orographic:
+    evidence: heuristic
+    min_elevation_gradient_m_per_km: 10
+    min_upslope_wind_ms: 2.0   # from FORECAST 850 hPa wind, not reanalysis

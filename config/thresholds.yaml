@@ -1,0 +1,13 @@
+# IMD 24-hour rainfall categories (mm). Lower bounds are inclusive.
+# Source: IMD rainfall intensity terminology. Status: SECONDARY — confirm against
+# IMD's official glossary before final release (see DATA_SOURCES.md section 6).
+
+accumulation_hours: 24
+thresholds_mm:
+  heavy: 64.5
+  very_heavy: 115.6
+  extremely_heavy: 204.5
+
+# Thresholds used for event verification (CSI/POD/FAR/ETS) and probability models.
+verification_thresholds_mm: [2.5, 15.6, 64.5, 115.6]
+probability_targets: [heavy, very_heavy]

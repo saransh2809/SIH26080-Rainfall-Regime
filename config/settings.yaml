@@ -1,0 +1,38 @@
+# Main settings. Env overrides: RAINPP_MODE, RAINPP_DATA_DIR, RAINPP_MODEL_DIR.
+
+mode: demo            # demo | real
+
+paths:
+  data_dir: data
+  model_dir: models
+
+domain:               # IMD 0.25 deg gridded rainfall extent (verified, see DATA_SOURCES.md)
+  lat_min: 6.5
+  lat_max: 38.5
+  lon_min: 66.5
+  lon_max: 100.0
+  resolution_deg: 0.25
+
+season:
+  months: [6, 7, 8, 9]  # JJAS monsoon
+
+forecast:
+  source: gefs_reforecast
+  init_hour_utc: 0
+  lead_days: [1, 2, 3]
+  members: [c00]        # control only for the screening prototype
+  # IMD rain day ends at 03 UTC; Day-N total from a 00 UTC run = APCP(24N+3) - APCP(24(N-1)+3)
+  rain_day_end_hour_utc: 3
+
+observation:
+  source: imd_gridded
+
+split:                  # chronological, inclusive years
+  train: [2010, 2015]
+  validation: [2016, 2017]
+  test: [2018, 2019]
+
+api:
+  host: 127.0.0.1
+  port: 8000
+  cors_origins: ["http://localhost:5173"]
