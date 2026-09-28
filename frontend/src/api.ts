@@ -80,6 +80,7 @@ export interface DistrictForecast {
   valid_date: string
   raw_mm: number | null
   corrected_mm: number | null
+  unet_mm?: number | null
   qm_mm: number | null
   observed_mm: number | null
   p_heavy_max: number | null

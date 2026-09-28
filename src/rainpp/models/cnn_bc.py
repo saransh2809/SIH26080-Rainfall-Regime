@@ -142,6 +142,19 @@ class CNNCorrector:
         self._train(train, self.epochs)
         return self
 
+    @classmethod
+    def load(cls, path) -> CNNCorrector:
+        """Rebuild a U-Net saved by scripts/run_cnn_correction.py."""
+        state = torch.load(path, weights_only=False)
+        model = cls(width=state["width"])
+        model.epochs = state["epochs"]
+        model.static_mean, model.static_sd = state["static_mean"], state["static_sd"]
+        model.scalar_mean, model.scalar_sd = state["scalar_mean"], state["scalar_sd"]
+        model.net = UNet(2 + model.static_mean.shape[0], len(model.scalar_mean), model.width)
+        model.net.load_state_dict(state["state_dict"])
+        model.net.eval()
+        return model
+
     @torch.no_grad()
     def predict(self, data: dict) -> np.ndarray:
         """Expected rain (mm) with the input grid shape; non-negative by construction."""

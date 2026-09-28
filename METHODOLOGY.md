@@ -307,12 +307,76 @@ equal-area projection, EPSG:6933); the maximum over overlapping cells for heavy-
 ## 10. Deep-learning corrector (Phase 8; `reports/phase8_validation.md`)
 
 A U-Net sees the whole forecast map (log rain, observed climatology, terrain, coast distance, land) plus lead, season and
-regime probabilities as constant planes, and predicts rain with the same Tweedie deviance as the LightGBM correctors,
-on observed land cells only. It is compared with A, B2 and C1 on identical validation rows. Results: see
-VERIFICATION.md §1; it is used in products only if it beats C1 significantly.
+regime probabilities (out-of-fold for training years, as for C1) as constant planes, and predicts rain with the same
+Tweedie deviance as the LightGBM correctors, on observed land cells only. ~0.1 M parameters; 7 epochs chosen by early
+stopping on 2015, refit on 2000–2015; 35 min on a laptop CPU. Scored on the same validation rows as A, B2 and C1.
 
-## 11. One-time evaluation on held-out data
+| Lead 1 (validation 2016–2017) | Raw | B2 | C1 | **U-Net** |
+|---|---|---|---|---|
+| RMSE (mm) | 15.68 | 13.16 | 13.07 | **12.93** |
+| MAE (mm) | 7.83 | 6.44 | **6.40** | 6.77 |
+| Bias (mm) | +1.63 | −0.22 | −0.22 | +1.07 |
+| Correlation | 0.471 | 0.567 | 0.575 | **0.593** |
+| ETS ≥ 64.5 mm | 0.103 | 0.069 | 0.078 | **0.121** |
+| FSS ≥ 64.5 mm, 9×9 | **0.529** | 0.229 | 0.273 | 0.460 |
 
-`scripts/run_final_evaluation.py` scores the frozen models (hashes recorded) on the test years 2018–2019 through the
-archive pipeline and on JJAS 2021–2025 operational forecasts through the live pipeline. Results: VERIFICATION.md §4 and
-`reports/final_evaluation.md`.
+U-Net vs C1, all leads pooled (5-day block bootstrap): RMSE **+0.126 mm [+0.004, +0.263]**, ETS ≥ 64.5 mm
+**+0.031 [+0.018, +0.046]** — both significant. The U-Net has the lowest RMSE and highest correlation at every lead, and
+is the only corrector whose heavy-rain ETS beats the raw forecast at lead 1 (0.121 vs 0.103; quantile mapping 0.134).
+Seeing the whole map lets it move displaced rain rather than only smooth it. Its costs are a **wet bias** (+0.9 to
++1.3 mm) and a higher MAE than C1, so it does not dominate on every metric.
+
+Decision (validation only): C1 stays the main corrected layer — it is unbiased and has the lowest MAE — and the U-Net is
+added as a separate, clearly labelled layer and scored in the one-time evaluation alongside the other models. The CNN
+*classifier* (§5.4) remains unused.
+
+## 11. One-time evaluation on held-out data (`reports/final_evaluation.md`)
+
+`scripts/run_final_evaluation.py` scored the frozen models once (2026-09-29, 04:05–04:14 IST) through the same
+`ProductBuilder` code that makes dashboard products: the **test years 2018–2019** through the archive pipeline, and
+**610 real GEFSv12 operational forecasts, JJAS 2021–2025**, through the live pipeline (forecast-only classifier, 0.5°
+inputs interpolated). No model, threshold or setting was changed after seeing these numbers. The lock file records the
+hashes of the evaluated model files; the U-Net weights (`models/cnn_bc/unet.pt`, saved 03:44 IST, SHA-256 `47f84876…`)
+were omitted from that list by a file-type filter, since fixed.
+
+| Lead 1 | Test 2018–2019 (3.6 M cell-days) | | | Operational 2021–2025 (9.1 M cell-days) | | |
+|---|---|---|---|---|---|---|
+| | RMSE (mm) | Corr. | ETS ≥ 64.5 | RMSE (mm) | Corr. | ETS ≥ 64.5 |
+| Raw GEFS | 16.73 | 0.487 | 0.108 | 15.01 | 0.483 | 0.088 |
+| Quantile mapping | 17.99 | 0.496 | 0.151 | 15.67 | 0.481 | **0.138** |
+| Global LightGBM (B2) | 13.49 | 0.599 | 0.099 | 13.68 | 0.579 | 0.067 |
+| **Regime-aware C1** | **13.39** | 0.607 | 0.098 | 13.64 | 0.585 | 0.070 |
+| Regime-split C2 | 13.47 | 0.601 | 0.100 | 13.69 | 0.579 | 0.068 |
+| **U-Net** | 13.51 | **0.613** | **0.155** | **13.27** | **0.602** | 0.096 |
+
+| Heavy-rain probability (all leads) | Test AUC | Test BSS | Operational AUC | Operational BSS |
+|---|---|---|---|---|
+| ≥ 64.5 mm (raw 0/1 AUC: 0.563 / 0.543) | **0.897** (lead 1: 0.914) | +0.101 | **0.880** (lead 1: 0.901) | +0.084 |
+| ≥ 115.6 mm | 0.908 | +0.046 | 0.877 | +0.038 |
+
+Paired 5-day block bootstrap, all leads pooled (positive = second better):
+
+| Comparison | Test RMSE | Test ETS ≥ 64.5 | Operational RMSE | Operational ETS ≥ 64.5 |
+|---|---|---|---|---|
+| C1 vs raw | **+2.56 [2.31, 2.79]** | −0.003 (n.s.) | **+1.78 [1.62, 1.97]** | **−0.014 [−0.027, −0.002]** |
+| C1 vs regime-blind B2 | **+0.082 [0.025, 0.138]** | +0.004 (n.s.) | **+0.074 [0.046, 0.103]** | **+0.004 [0.001, 0.007]** |
+| C2 vs B2 | +0.005 (n.s.) | +0.002 (n.s.) | +0.017 (n.s.) | +0.003 (n.s.) |
+| U-Net vs C1 | +0.020 (n.s.) | **+0.044 [0.029, 0.062]** | **+0.236 [0.157, 0.331]** | **+0.029 [0.021, 0.039]** |
+| P_regime vs climatology, Brier (≥ 64.5 mm) | **+0.0016** | | **+0.0013** | |
+
+Findings, stated as found:
+1. **The validation conclusions hold on unseen data.** Post-processing cuts lead-1 RMSE by 20% on the test years
+   (16.73 → 13.39 mm) and by 9–12% on real operational forecasts; heavy-rain AUC rises from ~0.55 to 0.88–0.90.
+2. **Regime-awareness helps, significantly, on both held-out sets**: C1 beats the regime-blind B2 on RMSE in both, and on
+   heavy-rain ETS operationally. The gains remain small (≈ 0.6% RMSE). Regime-split C2 shows no significant gain.
+3. **The U-Net is the most useful amount forecast for heavy rain**: significantly better heavy-rain ETS than C1 on both
+   sets, better than raw GEFS and on the test years better than quantile mapping at lead 1; significantly lower RMSE
+   than C1 operationally, not on the test years.
+4. **Operational forecasts are not the reforecast**: C1 and B2 are **1.1–1.2 mm too dry** at lead 1 on operational runs
+   (raw GEFS operational bias +0.2 mm vs +2.3 mm on the reforecast test years), and C1's heavy-rain ETS falls
+   significantly below raw. The U-Net is nearly unbiased there (−0.13 mm). Retraining on operational seasons is the
+   fix (LIMITATIONS).
+5. **Monsoon depressions**: raw GEFS keeps better heavy-rain ETS than the LightGBM correctors on both sets (test: raw
+   0.127 vs C1 0.113; operational: raw 0.113 vs C1 0.047). The U-Net beats raw on the test years (0.162) but not
+   operationally (0.107). Orographic cells again gain most (operational
+   ETS raw 0.086 → C1 0.177 → U-Net 0.196).

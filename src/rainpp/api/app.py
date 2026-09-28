@@ -18,7 +18,8 @@ from rainpp import __version__
 from rainpp.config import PROJECT_ROOT, Settings, load_settings, load_yaml
 
 REPORT_PHASES = Literal["phase4", "phase5", "phase6", "phase6b", "phase7"]
-GRID_VAR = Literal["raw_mm", "corrected_mm", "qm_mm", "p_heavy", "p_very_heavy", "local_regime", "observed_mm"]
+GRID_VAR = Literal["raw_mm", "corrected_mm", "unet_mm", "qm_mm", "p_heavy", "p_very_heavy", "local_regime",
+                   "observed_mm"]
 MODEL_NAMES = ("quantile_mapping", "global_lgbm", "regime_classifier", "regime_bc/C1", "regime_bc/B2s")
 
 
@@ -169,6 +170,7 @@ def create_app() -> FastAPI:
             "forecast_issued_00utc": init.isoformat(), "valid_date": table["valid_date"].astype(str).str[:10],
             "lead_day": lead,
             "raw_nwp_mm": table["raw_mm"].round(1), "corrected_mm": table["corrected_mm"].round(1),
+            "unet_mm": table["unet_mm"].round(1) if "unet_mm" in table else None,
             "quantile_mapped_mm": table["qm_mm"].round(1),
             "p_heavy_ge_64_5mm_max_cell": table["p_heavy_max"].round(3),
             "p_very_heavy_ge_115_6mm_max_cell": table["p_very_heavy_max"].round(3),

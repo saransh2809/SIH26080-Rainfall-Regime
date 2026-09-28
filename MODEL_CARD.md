@@ -12,6 +12,7 @@ district:
 | Local regime (OROGRAPHIC / COASTAL / INLAND) | Rules on forecast 850 hPa wind, GEFS terrain and coastline | `config/regimes.yaml` |
 | Corrected rainfall amount (mm) | **C1**: LightGBM Tweedie regressor with regime probabilities and local regime as inputs | `models/regime_bc/C1/` |
 | Heavy-rain-frequency-preserving amount (mm) | **B1**: quantile mapping per cell and lead | `models/quantile_mapping/` |
+| Whole-map corrected amount (mm), deep-learning layer | **D**: U-Net with regime probabilities as inputs | `models/cnn_bc/` |
 | P(rain ≥ 64.5 mm), P(rain ≥ 115.6 mm) | LightGBM binary classifiers with regime inputs, uncalibrated | `models/heavy_rain/P_regime_*` |
 
 It is **not a weather model**, does not use any observation of the forecast day, and is not an official IMD warning.
@@ -35,14 +36,24 @@ archive classifier only — IMD core-zone rainfall observed on the two days befo
 | | Raw GEFS | Product |
 |---|---|---|
 | RMSE, lead 1 / 2 / 3 (mm) | 15.68 / 15.76 / 16.06 | C1: 13.07 / 13.66 / 14.06 |
+| RMSE, lead 1, U-Net layer (mm) | 15.68 | D: 12.93 (wet bias +1.07 mm) |
 | Correlation, lead 1 | 0.471 | C1: 0.575 |
-| ETS ≥ 64.5 mm, lead 1 | 0.103 | QM: 0.134 · C1: 0.078 |
+| Correlation, lead 1, U-Net layer | 0.471 | D: 0.593 |
+| ETS ≥ 64.5 mm, lead 1 | 0.103 | QM: 0.134 · U-Net: 0.121 · C1: 0.078 |
 | Heavy-rain ROC AUC (≥ 64.5 mm), all leads | 0.549 (0/1 exceedance) | P_regime: 0.883 (lead 1: 0.907) |
 | Heavy-rain Brier skill vs climatology | −0.34 | P_regime: +0.077 |
 | Very-heavy ROC AUC (≥ 115.6 mm) | 0.525 | P_regime: 0.886 |
 | Regime classifier macro F1 | — | 0.554 (live variant 0.532; simple rule 0.542) |
 
-Held-out results (test years and operational forecasts): `reports/final_evaluation.md` and VERIFICATION.md §4.
+## Held-out performance (scored once; `reports/final_evaluation.md`)
+
+| Lead 1 | Test 2018–2019 | Operational 2021–2025 (live pipeline) |
+|---|---|---|
+| RMSE raw → C1 / U-Net (mm) | 16.73 → 13.39 / 13.51 | 15.01 → 13.64 / 13.27 |
+| Bias C1 / U-Net (mm) | +0.26 / +1.75 | −1.22 / −0.13 |
+| ETS ≥ 64.5 mm raw → C1 / U-Net / QM | 0.108 → 0.098 / 0.155 / 0.151 | 0.088 → 0.070 / 0.096 / 0.138 |
+| Heavy-rain AUC raw 0/1 → P_regime (all leads) | 0.563 → 0.897 | 0.543 → 0.880 |
+| Heavy-rain Brier skill vs climatology | +0.101 | +0.084 |
 
 ## Intended use
 

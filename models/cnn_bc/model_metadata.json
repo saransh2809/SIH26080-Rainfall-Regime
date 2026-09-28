@@ -1,0 +1,48 @@
+{
+  "name": "D_unet",
+  "model_type": "U-Net (PyTorch), Tweedie deviance",
+  "package_version": "0.1.0",
+  "data_kind": "real",
+  "created_utc": "2026-09-28T22:14:15+00:00",
+  "features": [
+    "log1p forecast map",
+    "log1p observed climatology map",
+    "elevation",
+    "coast distance",
+    "land",
+    "lead_day",
+    "doy_sin",
+    "doy_cos",
+    "p_NORMAL",
+    "p_ACTIVE",
+    "p_BREAK",
+    "p_MONSOON_DEPRESSION"
+  ],
+  "training_period": [
+    2000,
+    2015
+  ],
+  "validation_period": [
+    2016,
+    2017
+  ],
+  "test_period_used": false,
+  "data_sources": {
+    "regime_probabilities": "LGBM out-of-fold"
+  },
+  "validation_metrics": {
+    "1": {
+      "rmse": 12.928460334501981,
+      "bias": 1.0691520271519481
+    },
+    "2": {
+      "rmse": 13.478777484781878,
+      "bias": 0.8542340655550167
+    },
+    "3": {
+      "rmse": 14.007990402487394,
+      "bias": 1.2862650885771227
+    }
+  },
+  "epochs": 7
+}

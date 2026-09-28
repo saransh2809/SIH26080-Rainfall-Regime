@@ -138,7 +138,7 @@ def main() -> None:
             md += [f"### {key}: {ds['description']}", "",
                    f"{ds['rows']:,} cell-days, valid {ds['valid_dates'][0]} → {ds['valid_dates'][1]}.", ""]
             md += corrector_table(ds["deterministic"], ["A_raw_nwp", "B1_quantile_mapping", "B2_global_lgbm",
-                                                        "C1_regime_features", "C2_regime_split"])
+                                                        "C1_regime_features", "C2_regime_split", "D_unet"])
             md += probability_table(ds["probabilistic"], ["CLIM", "RAW01", "QM01", "P_regime"])
             md += significance_table(ds["significance"])
     (PROJECT_ROOT / "VERIFICATION.md").write_text("\n".join(md), encoding="utf-8")

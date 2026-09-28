@@ -23,7 +23,9 @@ import xarray as xr
 
 from rainpp.config import Settings, load_yaml
 from rainpp.data.features import build_forecast_table, fit_climatology
+from rainpp.data.sources.gefs import open_interim
 from rainpp.data.sources.imd import IMDGridded
+from rainpp.models.cnn_bc import CNNCorrector
 from rainpp.models.global_bc import LGBMCorrector
 from rainpp.models.heavy_rain import IsotonicCalibrator, fit_event_climatology
 from rainpp.models.quantile_mapping import QuantileMapping
@@ -39,7 +41,7 @@ from rainpp.spatial.districts import DistrictWeights
 
 log = logging.getLogger(__name__)
 
-GRID_VARS = ("raw_mm", "corrected_mm", "qm_mm", "p_heavy", "p_very_heavy", "local_regime", "observed_mm")
+GRID_VARS = ("raw_mm", "corrected_mm", "unet_mm", "qm_mm", "p_heavy", "p_very_heavy", "local_regime", "observed_mm")
 
 
 @dataclass
@@ -135,6 +137,53 @@ class ProductBuilder:
         return fit_forecast_core_stats(rows[rows["valid_date"].dt.year.between(tr0, tr1)])
 
     @cached_property
+    def unet(self) -> CNNCorrector:
+        return CNNCorrector.load(self.model_dir / "cnn_bc" / "unet.pt")
+
+    @cached_property
+    def unet_static(self) -> tuple[np.ndarray, np.ndarray]:
+        """Static maps (elevation, coast distance, land) and observed climatology on the domain grid, exactly as in
+        scripts/run_cnn_correction.py."""
+        static_nc = xr.open_dataset(self.data_dir / "interim" / "static" / "static.nc").load()
+        on = {"lat": self.grid_lat, "lon": self.grid_lon, "method": "nearest"}
+        static = np.nan_to_num(np.stack([self.terrain["elevation_m"].sel(**on).values,
+                                         self.terrain["coast_km"].sel(**on).values,
+                                         static_nc["land_fraction"].sel(**on).values])).astype(np.float32)
+        return static, np.nan_to_num(self.rain_climatology.sel(**on).values).astype(np.float32)
+
+    @property
+    def grid_lat(self) -> np.ndarray:
+        d = self.s.domain
+        return np.round(np.arange(d.lat_min, d.lat_max + 1e-9, d.resolution_deg), 4)
+
+    @property
+    def grid_lon(self) -> np.ndarray:
+        d = self.s.domain
+        return np.round(np.arange(d.lon_min, d.lon_max + 1e-9, d.resolution_deg), 4)
+
+    def unet_column(self, table: pd.DataFrame, fc: xr.Dataset, probs: pd.DataFrame) -> np.ndarray:
+        """U-Net rain (mm) for every row of `table`, from the whole forecast maps in `fc`."""
+        rain = fc["precip_mm"].isel(member=0).transpose("init_time", "lead_day", "lat", "lon")
+        inits = pd.DatetimeIndex(rain.init_time.values).floor("D")
+        leads = rain.lead_day.values
+        keys = pd.DataFrame({"init_time": np.repeat(inits, len(leads)), "lead_day": np.tile(leads, len(inits))})
+        p = keys.merge(probs.assign(init_time=pd.to_datetime(probs["init_time"]).dt.floor("D")),
+                       on=["init_time", "lead_day"], how="left", validate="one_to_one")
+        doy = (keys["init_time"] + pd.to_timedelta(keys["lead_day"], unit="D")).dt.dayofyear.to_numpy()
+        scalars = np.column_stack([keys["lead_day"], np.sin(2 * np.pi * doy / 365.25),
+                                   np.cos(2 * np.pi * doy / 365.25), p[PROB_COLS].to_numpy()]).astype(np.float32)
+        static, clim = self.unet_static
+        maps = self.unet.predict({"forecast": rain.values.reshape(len(keys), *rain.shape[2:]).astype(np.float32),
+                                  "doy": doy, "scalars": scalars, "static": static, "climatology": clim})
+        sample = pd.Series(np.arange(len(keys)), index=pd.MultiIndex.from_frame(keys))
+        k = sample.reindex(pd.MultiIndex.from_arrays([pd.to_datetime(table["init_time"]).dt.floor("D"),
+                                                      table["lead_day"]])).to_numpy()
+        d = self.s.domain
+        i = np.rint((table["lat"].to_numpy() - d.lat_min) / d.resolution_deg).astype(int)
+        j = np.rint((table["lon"].to_numpy() - d.lon_min) / d.resolution_deg).astype(int)
+        return maps[k, i, j]
+
+    @cached_property
     def districts(self) -> DistrictWeights:
         return DistrictWeights.load(self.data_dir / "interim" / "static" / "district_weights")
 
@@ -161,8 +210,9 @@ class ProductBuilder:
                 for lead, r in res.items()}
 
     # ---- inputs ----
-    def archive_inputs(self, year: int, init: date | None = None) -> tuple[pd.DataFrame, pd.DataFrame, xr.Dataset]:
-        """Cell table, classifier rows and synoptic fields from the archived reforecast (one init or a whole year)."""
+    def archive_inputs(self, year: int, init: date | None = None
+                       ) -> tuple[pd.DataFrame, pd.DataFrame, xr.Dataset, xr.Dataset]:
+        """Cell table, classifier rows, synoptic fields and forecast maps from the archived reforecast."""
         filters = None if init is None else [("init_time", "==", pd.Timestamp(init))]
         table = pd.read_parquet(self.data_dir / "processed" / f"table_{year}.parquet", filters=filters)
         if table.empty:
@@ -171,7 +221,8 @@ class ProductBuilder:
         regime_rows = pd.read_parquet(self.data_dir / "processed" / "regime_features.parquet")
         regime_rows = regime_rows[regime_rows["init_time"].isin(inits)].sort_values(["init_time", "lead_day"])
         fields = xr.open_dataset(self.data_dir / "interim" / "gefs_fields" / f"fields_{year}.nc").load()
-        return table, regime_rows, fields.sel(init_time=inits)
+        fc = open_interim(self.data_dir / "interim" / "gefs" / f"gefs_apcp_{year}.nc").sel(init_time=inits)
+        return table, regime_rows, fields.sel(init_time=inits), fc
 
     def live_inputs(self, fc: xr.Dataset, fields: xr.Dataset,
                     observed: xr.Dataset | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -194,7 +245,7 @@ class ProductBuilder:
 
     # ---- predictions (shared by products and the one-time evaluation) ----
     def predict(self, table: pd.DataFrame, regime_rows: pd.DataFrame, fields: xr.Dataset, live: bool,
-                labels: pd.Series | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+                labels: pd.Series | None = None, fc: xr.Dataset | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Add regime inputs, corrected rainfall and heavy-rain probabilities to every cell row.
 
         `labels` (observed regimes) are attached only as obs_* diagnostic columns for scoring, never used as inputs.
@@ -210,6 +261,8 @@ class ProductBuilder:
 
         table["corrected_mm"] = self.corrector.predict(table)
         table["qm_mm"] = self.qm.predict(table)
+        if fc is not None:
+            table["unet_mm"] = self.unet_column(table, fc, probs).astype(np.float32)
         for target in ("heavy", "very_heavy"):
             t = float(self.thresholds[target])
             clim = self.event_climatology[t]
@@ -225,8 +278,8 @@ class ProductBuilder:
     # ---- products ----
     def build(self, init: date) -> Product:
         """Product from the archived reforecast tables (training, validation or test years)."""
-        table, regime_rows, fields = self.archive_inputs(init.year, init)
-        table, probs = self.predict(table, regime_rows, fields, live=False)
+        table, regime_rows, fields, fc = self.archive_inputs(init.year, init)
+        table, probs = self.predict(table, regime_rows, fields, live=False, fc=fc)
         return self._product(init, probs, table, {
             "source": "archive", "forecast": "NOAA GEFSv12 reforecast, control member",
             **self._classifier_meta("LGBM", "LightGBM on forecast fields and rainfall observed before the forecast "
@@ -241,7 +294,7 @@ class ProductBuilder:
         year ends). `observed`, when IMD has published the valid days, is attached for verification only.
         """
         table, regime_rows = self.live_inputs(fc, fields, observed)
-        table, probs = self.predict(table, regime_rows, fields, live=True)
+        table, probs = self.predict(table, regime_rows, fields, live=True, fc=fc)
         months = set(self.s.season.months)
         valid_months = {int(m) for m in table["valid_date"].dt.month.unique()}
         return self._product(init, probs, table, {
@@ -265,6 +318,7 @@ class ProductBuilder:
         ds = ds.reindex(lat=lat, lon=lon, method="nearest", tolerance=1e-6)
         ds.attrs = {"data_kind": "real", "observed_mm": "IMD gridded observation, for verification only",
                     "corrected_mm": "C1 regime-aware LightGBM", "qm_mm": "B1 quantile mapping (preserves heavy rain)",
+                    "unet_mm": "D U-Net on whole forecast maps (deep-learning comparison; wet bias on validation)",
                     "p_heavy": f"P(rain >= {self.thresholds['heavy']} mm), LightGBM with regime inputs",
                     "p_very_heavy": f"P(rain >= {self.thresholds['very_heavy']} mm), isotonic-calibrated",
                     "local_regime": json.dumps(LOCAL_CODES)}
@@ -279,7 +333,7 @@ class ProductBuilder:
             out = w.districts[["district_id", "district_name", "state_name", "coverage_fraction"]].copy()
             out["lead_day"] = int(lead)
             out["valid_date"] = group["valid_date"].iloc[0]
-            for col in ("raw_mm", "corrected_mm", "qm_mm", "observed_mm"):
+            for col in ("raw_mm", "corrected_mm", "unet_mm", "qm_mm", "observed_mm"):
                 values = g[col].to_numpy(dtype=float)
                 out[col] = w.aggregate_mean(np.nan_to_num(values)) if not np.isnan(values).all() else np.nan
             for col in ("p_heavy", "p_very_heavy"):

@@ -27,6 +27,9 @@ export function DistrictPanel({ district, forecast }: { district: District | und
               <tbody>
                 <tr><th scope="row">{t('rowRaw')}</th><td className="num">{mm(forecast.raw_mm)}</td></tr>
                 <tr><th scope="row">{t('rowCorrected')}</th><td className="num">{mm(forecast.corrected_mm)}</td></tr>
+                {forecast.unet_mm !== undefined && (
+                  <tr><th scope="row">{t('rowUnet')}</th><td className="num">{mm(forecast.unet_mm)}</td></tr>
+                )}
                 <tr><th scope="row">{t('rowQm')}</th><td className="num">{mm(forecast.qm_mm)}</td></tr>
                 <tr><th scope="row">{t('rowHeavy')}</th><td className="num">{pct(forecast.p_heavy_max)}</td></tr>
                 <tr><th scope="row">{t('rowVeryHeavy')}</th><td className="num">{pct(forecast.p_very_heavy_max)}</td></tr>

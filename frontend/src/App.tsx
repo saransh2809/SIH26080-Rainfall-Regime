@@ -59,7 +59,7 @@ export default function App() {
   const choropleth = useMemo(() => {
     if (districtForecast.state !== 'ready') return undefined
     return {
-      values: new Map(districtForecast.data.map((d) => [d.district_id, d[layer]])),
+      values: new Map(districtForecast.data.map((d) => [d.district_id, d[layer] ?? null])),
       scale: layerSpec.scale,
       label: translate(lang, `layer_${layer}`),
     }

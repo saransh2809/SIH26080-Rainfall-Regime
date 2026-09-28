@@ -44,3 +44,13 @@ def test_corrector_learns_the_bias_and_stays_non_negative() -> None:
     raw_rmse = np.sqrt(np.mean((test["forecast"][land] - test["target"][land]) ** 2))
     cnn_rmse = np.sqrt(np.mean((pred[land] - test["target"][land]) ** 2))
     assert cnn_rmse < raw_rmse
+
+
+def test_saved_unet_reloads_with_identical_predictions(tmp_path) -> None:
+    train, test = _data(40, 0), _data(8, 1)
+    model = CNNCorrector(width=8, max_epochs=2, patience=1, batch_size=8).fit(train, np.arange(40) >= 32)
+    torch.save({"state_dict": model.net.state_dict(), "width": model.width, "epochs": model.epochs,
+                "static_mean": model.static_mean, "static_sd": model.static_sd,
+                "scalar_mean": model.scalar_mean, "scalar_sd": model.scalar_sd}, tmp_path / "unet.pt")
+    loaded = CNNCorrector.load(tmp_path / "unet.pt")
+    np.testing.assert_allclose(loaded.predict(test), model.predict(test), rtol=1e-6)

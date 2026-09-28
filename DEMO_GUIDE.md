@@ -38,9 +38,11 @@ are built. The header always states the data kind, and every forecast shows whet
 | 4 | Layer **P(≥64.5 mm)** | "Heavy-rain probability lights up the Konkan coast. Mumbai Suburban reaches 47% — about 33 times the 1.4% base rate." |
 | 5 | Layer **Observed (IMD)** | "What IMD observed afterwards — shown for verification only, never an input." |
 | 6 | District panel (Mumbai Suburban is selected) | "Raw 60 mm, regime-aware correction 61 mm, quantile-mapped 94 mm, observed 156 mm. Amount forecasts under-estimate extremes; that is why the probability product exists." |
+| 6b | Layer **U-Net (deep learning)** | "A deep-learning model that sees the whole forecast map. On validation it beat our LightGBM corrector significantly on error and on heavy rain — it is wetter on average, so it is shown alongside, not instead." |
 | 7 | "Why this correction" | "These are the model's own feature contributions (SHAP) for this day, not written text." |
-| 8 | **Case study → Kerala floods, 16 Aug 2018** (test year) and one live-mode test event (e.g. **Meghalaya, 16 Jun 2022**) | "These days were never used to train or choose a model. The Meghalaya case is a real NOAA operational forecast run through our live pipeline." |
-| 9 | Model comparison table | "Validation 2016–17: the regime-aware corrector cuts error 17%; heavy-rain discrimination goes from 0.55 to 0.88 AUC. Held-out scores are in the final evaluation report." |
+| 8 | **Case study → Kerala floods, 16 Aug 2018** (test year) | "Never used to train or choose a model. Kottayam: raw 95 mm, corrected 62, observed 210 — but heavy-rain chance 61%." |
+| 8b | **Case study → Meghalaya, 16 Jun 2022** (live-mode test) | "A real NOAA operational forecast through our live pipeline. West Khasi Hills observed 360 mm; every amount forecast was under 110 mm, the heavy-rain chance was 72%." |
+| 9 | Model comparison table, then `reports/final_evaluation.md` | "On the unseen test years error drops 20% and heavy-rain AUC goes 0.56 → 0.90; on 610 real daily forecasts error drops up to 12% and AUC reaches 0.88. We also report where it is worse: on operational runs the tree correctors are ~1 mm too dry." |
 | 10 | **Export → District table (CSV)** and **Print / save PDF** | "District tables for disaster managers, and a one-page bulletin ranking districts by heavy-rain chance." |
 | 11 | **हिन्दी** button | "The whole interface switches to Hindi; the link keeps the language." |
 | 12 | (Optional) terminal: `.venv/Scripts/python scripts/run_live.py --latest --allow-out-of-season` | "Live mode pulls today's NOAA run and builds this product in under a minute. Outside the monsoon it warns that the models were trained on June–September." |

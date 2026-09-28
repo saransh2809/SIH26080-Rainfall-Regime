@@ -41,14 +41,14 @@ log = logging.getLogger("run_final_evaluation")
 REPORTS = PROJECT_ROOT / "reports"
 LOCK = REPORTS / "final_evaluation.lock.json"
 MODELS = {"A_raw_nwp": "nwp_precip_mm", "B1_quantile_mapping": "qm_mm", "B2_global_lgbm": "pred_B2",
-          "C1_regime_features": "corrected_mm", "C2_regime_split": "pred_C2"}
+          "C1_regime_features": "corrected_mm", "C2_regime_split": "pred_C2", "D_unet": "unet_mm"}
 KEEP = ["init_time", "valid_date", "lead_day", "lat", "lon", "obs_precip_mm", "obs_regime", "local_regime",
         *MODELS.values(), "p_heavy", "p_very_heavy"]
 
 
 def model_hashes(model_dir) -> dict[str, str]:
     return {str(p.relative_to(model_dir)).replace("\\", "/"): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(model_dir.rglob("*")) if p.is_file() and p.suffix in {".txt", ".json", ".npz", ".joblib"}}
+            for p in sorted(model_dir.rglob("*")) if p.is_file() and p.suffix in {".txt", ".json", ".npz", ".joblib", ".pt"}}
 
 
 def with_extra_models(table: pd.DataFrame, b2: LGBMCorrector, c2: RegimeSplitCorrector) -> pd.DataFrame:
@@ -60,8 +60,8 @@ def with_extra_models(table: pd.DataFrame, b2: LGBMCorrector, c2: RegimeSplitCor
 def test_rows(builder: ProductBuilder, years: range, labels: pd.Series, b2, c2, t_heavy, t_very) -> pd.DataFrame:
     parts = []
     for year in years:
-        table, regime_rows, fields = builder.archive_inputs(year)
-        table, _ = builder.predict(table, regime_rows, fields, live=False, labels=labels)
+        table, regime_rows, fields, fc = builder.archive_inputs(year)
+        table, _ = builder.predict(table, regime_rows, fields, live=False, labels=labels, fc=fc)
         table = with_extra_models(table, b2, c2)
         parts.append(table[KEEP + [f"clim_p_ge_{t_heavy}", f"clim_p_ge_{t_very}"]])
         log.info("test %d: %d rows", year, len(table))
@@ -79,7 +79,7 @@ def operational_rows(builder: ProductBuilder, years: range, labels: pd.Series, b
         observed = imd.load(date(year, 1, 1), date(year, 12, 31))
         table, regime_rows = builder.live_inputs(fc, fields, observed)
         table = table[table["obs_precip_mm"].notna()].reset_index(drop=True)
-        table, _ = builder.predict(table, regime_rows, fields, live=True, labels=labels)
+        table, _ = builder.predict(table, regime_rows, fields, live=True, labels=labels, fc=fc)
         table = with_extra_models(table, b2, c2)
         parts.append(table[KEEP + [f"clim_p_ge_{t_heavy}", f"clim_p_ge_{t_very}"]])
         log.info("operational %d: %d rows", year, len(table))
@@ -129,7 +129,7 @@ def evaluate(rows: pd.DataFrame, settings, thresholds_mm: dict, bootstrap: dict)
     ets = lambda f, o: calculate_ets(f, o, 64.5)
     significance = {}
     for a, b in (("nwp_precip_mm", "corrected_mm"), ("pred_B2", "corrected_mm"), ("pred_B2", "pred_C2"),
-                 ("nwp_precip_mm", "qm_mm")):
+                 ("nwp_precip_mm", "qm_mm"), ("corrected_mm", "unet_mm"), ("nwp_precip_mm", "unet_mm")):
         significance[f"{b} vs {a}"] = {
             "rmse": block_bootstrap_difference(rows, calculate_rmse, a, b, **bootstrap),
             "ets_64.5": block_bootstrap_difference(rows, ets, a, b, higher_is_better=True, **bootstrap)}

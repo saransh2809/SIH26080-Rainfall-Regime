@@ -36,11 +36,12 @@ export function classColor(cls: number, scale: Scale): string | null {
   return getComputedStyle(document.documentElement).getPropertyValue(`--${scale.kind}-${cls}`).trim()
 }
 
-export type LayerKey = 'raw_mm' | 'corrected_mm' | 'qm_mm' | 'observed_mm' | 'p_heavy_max' | 'p_very_heavy_max'
+export type LayerKey = 'raw_mm' | 'corrected_mm' | 'unet_mm' | 'qm_mm' | 'observed_mm' | 'p_heavy_max' | 'p_very_heavy_max'
 
 export const LAYERS: { key: LayerKey; label: string; scale: Scale; note?: string }[] = [
   { key: 'raw_mm', label: 'Raw NWP', scale: RAIN_SCALE },
   { key: 'corrected_mm', label: 'Regime-aware', scale: RAIN_SCALE },
+  { key: 'unet_mm', label: 'U-Net', scale: RAIN_SCALE, note: 'deep-learning comparison' },
   { key: 'qm_mm', label: 'Quantile-mapped', scale: RAIN_SCALE, note: 'preserves heavy-rain frequency' },
   { key: 'observed_mm', label: 'Observed (IMD)', scale: RAIN_SCALE, note: 'observation, for verification only' },
   { key: 'p_heavy_max', label: 'P(≥64.5 mm)', scale: PROB_SCALE },

@@ -21,7 +21,7 @@ DATA → IDENTIFY REGIME → CORRECT NWP → PREDICT HEAVY RAIN → VERIFY → V
 |---|---|---|
 | Data | NOAA GEFSv12 reforecast 2000–2019 (training archive) and operational runs (live), paired with IMD 0.25° gridded rainfall, aligned to IMD's 03 UTC rain day | `src/rainpp/data` |
 | Regime | Synoptic regime per day (active / break / depression / normal) predicted from forecast fields; local regime per cell (orographic / coastal / inland) | `src/rainpp/regimes` |
-| Correction | Quantile mapping and LightGBM correctors, regime-blind and regime-aware | `src/rainpp/models` |
+| Correction | Quantile mapping, LightGBM correctors (regime-blind and regime-aware) and a U-Net deep-learning corrector | `src/rainpp/models` |
 | Heavy rain | Probability of ≥ 64.5 mm and ≥ 115.6 mm (IMD heavy / very heavy), calibrated | `src/rainpp/models/heavy_rain.py` |
 | Verification | RMSE, MAE, bias, ETS, CSI, POD, FAR, FSS, Brier skill, ROC AUC, block-bootstrap intervals | `src/rainpp/verification` |
 | Products | Grids, district table (641 districts, CSV), printable bulletin, regime probabilities, SHAP-based explanation per forecast | `src/rainpp/products.py` |
@@ -32,11 +32,17 @@ DATA → IDENTIFY REGIME → CORRECT NWP → PREDICT HEAVY RAIN → VERIFY → V
 
 - Post-processing reduces lead-1 RMSE by 17% (15.68 → 13.07 mm, regime-aware C1) and raises heavy-rain discrimination
   from AUC 0.55 (raw forecast) to 0.88 (probability model; 0.91 at lead 1).
+- A U-Net that sees the whole forecast map beats the LightGBM corrector significantly on RMSE (12.93 mm at lead 1)
+  and heavy-rain ETS (0.121 vs 0.078), at the cost of a wet bias; it is shown as a separate layer.
 - Regime information adds **small but statistically significant** gains (C1 RMSE, heavy-rain Brier score), is clearest
   over the Western Ghats, and **hurts** regime-split quantile mapping. Raw GEFS keeps the best heavy-rain placement in
   monsoon depressions.
-- Held-out results — test years 2018–2019 and real operational forecasts JJAS 2021–2025, scored once:
-  [reports/final_evaluation.md](reports/final_evaluation.md).
+- **Held-out results, scored once** ([reports/final_evaluation.md](reports/final_evaluation.md)):
+  - Test years 2018–2019: lead-1 RMSE 16.73 → 13.39 mm (−20%, C1); heavy-rain AUC 0.56 → 0.90.
+  - 610 real NOAA operational forecasts, JJAS 2021–2025, through the live pipeline: RMSE 15.01 → 13.27 mm (U-Net) /
+    13.64 mm (C1); heavy-rain AUC 0.54 → 0.88. Regime-aware C1 beats the regime-blind model significantly on both sets.
+  - Found and reported: on operational runs the LightGBM correctors are ~1.2 mm too dry and lose heavy-rain ETS to raw
+    GEFS; the U-Net is nearly unbiased.
 - Every table: [VERIFICATION.md](VERIFICATION.md). Methods: [METHODOLOGY.md](METHODOLOGY.md). Caveats:
   [LIMITATIONS.md](LIMITATIONS.md). Model card: [MODEL_CARD.md](MODEL_CARD.md).
 
@@ -52,6 +58,7 @@ DATA → IDENTIFY REGIME → CORRECT NWP → PREDICT HEAVY RAIN → VERIFY → V
 | [LIMITATIONS.md](LIMITATIONS.md) | What the results do and do not show |
 | [DEMO_GUIDE.md](DEMO_GUIDE.md) | Running the offline demonstration |
 | `reports/` | Machine-readable and Markdown validation reports per phase |
+| `presentation/` | SIH deck (PPTX with clickable navigation, and PDF) |
 
 ## Quick start (Windows, Python 3.12, Node 24)
 
