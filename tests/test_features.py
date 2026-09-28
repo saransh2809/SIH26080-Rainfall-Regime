@@ -7,11 +7,13 @@ import xarray as xr
 
 from rainpp.data.align import pair_forecast_observation
 from rainpp.data.features import (
+    build_forecast_table,
     build_table,
     fit_climatology,
     forecast_features,
     neighbourhood_stats,
 )
+from rainpp.data.schema import PRECIP_VAR
 from tests.conftest import make_forecast, make_observation
 
 
@@ -58,3 +60,17 @@ def test_table_has_one_row_per_observed_cell() -> None:
     assert len(table) == 2 * (3 * 2 - 1)  # 2 leads x 5 observed cells
     assert table["obs_precip_mm"].notna().all()
     assert {"valid_date", "lead_day", "nwp_mean_7x7", "doy_sin"} <= set(table.columns)
+
+
+def test_forecast_table_matches_training_columns_without_observations() -> None:
+    fc = make_forecast()
+    values = np.full((3, 3, 2), 4.0)
+    values[:, 0, 0] = np.nan
+    obs = make_observation(values=values)
+    climatology = fit_climatology(obs[PRECIP_VAR])
+    live = build_forecast_table(fc, climatology, obs[PRECIP_VAR].isel(time=0).notnull().drop_vars("time"))
+    trained = build_table(fc, pair_forecast_observation(fc, obs), climatology)
+    assert set(live.columns) == set(trained.columns)
+    assert len(live) == len(trained)
+    assert live["obs_precip_mm"].isna().all()
+    np.testing.assert_allclose(live["obs_climatology_mm"], trained["obs_climatology_mm"])

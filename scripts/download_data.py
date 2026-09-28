@@ -7,6 +7,7 @@ Usage:
     python scripts/download_data.py                   # everything, all years in the split
     python scripts/download_data.py --years 2018      # selected years
     python scripts/download_data.py --source fields   # one source: imd|gefs|fields|static
+    python scripts/download_data.py --source gefs_op fields_op --years 2021 2022  # operational GEFSv12 (live inputs)
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ import pandas as pd
 from rainpp.config import load_settings
 from rainpp.data.sources.gefs import GEFSReforecast
 from rainpp.data.sources.gefs_fields import GEFSFields
+from rainpp.data.sources.gefs_operational import GEFSOperational, GEFSOperationalFields
 from rainpp.data.sources.imd import download_year
 
 log = logging.getLogger("download")
@@ -32,7 +34,7 @@ def season_dates(year: int, months: list[int]) -> list:
     return [d.date() for d in days if d.month in months]
 
 
-def gefs_year(src: GEFSReforecast, year: int, months: list[int], leads: list[int], members: list[str],
+def gefs_year(src: GEFSReforecast | GEFSOperational, year: int, months: list[int], leads: list[int], members: list[str],
               out_dir: Path) -> None:
     target = out_dir / f"gefs_apcp_{year}.nc"
     if target.exists():
@@ -48,7 +50,7 @@ def gefs_year(src: GEFSReforecast, year: int, months: list[int], leads: list[int
              time.time() - start, target.name, target.stat().st_size / 1e6)
 
 
-def fields_year(src: GEFSFields, year: int, months: list[int], leads: list[int], out_dir: Path) -> None:
+def fields_year(src: GEFSFields | GEFSOperationalFields, year: int, months: list[int], leads: list[int], out_dir: Path) -> None:
     target = out_dir / f"fields_{year}.nc"
     if target.exists():
         log.info("fields %s already present, skipping", year)
@@ -98,28 +100,39 @@ def main() -> None:
     first, last = settings.split.train[0], settings.split.test[1]
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--years", type=int, nargs="+", default=list(range(first, last + 1)))
-    parser.add_argument("--source", choices=["imd", "gefs", "fields", "static", "all"], default="all")
+    parser.add_argument("--source", nargs="+", default=["all"],
+                        choices=["imd", "gefs", "fields", "static", "gefs_op", "fields_op", "all"])
     parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
     data_dir = settings.paths.data_dir
-    if args.source in ("imd", "all"):
+    wanted = set(args.source)
+    if wanted & {"imd", "all"}:
         for year in args.years:
             download_year(year, data_dir / "raw" / "imd")
-    if args.source in ("gefs", "all"):
+    if wanted & {"gefs", "all"}:
         src = GEFSReforecast(settings.domain, settings.forecast.init_hour_utc,
                              settings.forecast.rain_day_end_hour_utc, max_workers=args.workers)
         for year in args.years:
             gefs_year(src, year, settings.season.months, settings.forecast.lead_days,
                       settings.forecast.members, data_dir / "interim" / "gefs")
-    if args.source in ("static", "all"):
+    if wanted & {"static", "all"}:
         static_fields(settings.domain, data_dir / "interim" / "static")
-    if args.source in ("fields", "all"):
+    if wanted & {"fields", "all"}:
         fsrc = GEFSFields(max_workers=args.workers)
         for year in args.years:
             fields_year(fsrc, year, settings.season.months, settings.forecast.lead_days,
                         data_dir / "interim" / "gefs_fields")
+    op_dir = data_dir / "interim" / "gefs_operational"
+    if "gefs_op" in wanted:
+        osrc = GEFSOperational(settings.domain, settings.forecast.rain_day_end_hour_utc, max_workers=args.workers)
+        for year in args.years:
+            gefs_year(osrc, year, settings.season.months, settings.forecast.lead_days, settings.forecast.members, op_dir)
+    if "fields_op" in wanted:
+        ofsrc = GEFSOperationalFields(max_workers=args.workers)
+        for year in args.years:
+            fields_year(ofsrc, year, settings.season.months, settings.forecast.lead_days, op_dir)
 
 
 if __name__ == "__main__":

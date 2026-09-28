@@ -22,12 +22,18 @@ import pandas as pd
 import xarray as xr
 
 from rainpp.config import Settings, load_yaml
+from rainpp.data.features import build_forecast_table, fit_climatology
 from rainpp.data.sources.imd import IMDGridded
 from rainpp.models.global_bc import LGBMCorrector
 from rainpp.models.heavy_rain import IsotonicCalibrator, fit_event_climatology
 from rainpp.models.quantile_mapping import QuantileMapping
 from rainpp.regimes.augment import LOCAL_COLS, PROB_COLS, add_regime_columns
 from rainpp.regimes.classifier import CLASSES
+from rainpp.regimes.features import (
+    add_forecast_anomaly,
+    build_classifier_table,
+    fit_forecast_core_stats,
+)
 from rainpp.regimes.local import LOCAL_CODES, static_terrain
 from rainpp.spatial.districts import DistrictWeights
 
@@ -67,8 +73,17 @@ class ProductBuilder:
         return lgb.Booster(model_file=str(self.model_dir / "regime_classifier" / "lgbm.txt"))
 
     @cached_property
+    def live_classifier(self) -> lgb.Booster:
+        return lgb.Booster(model_file=str(self.model_dir / "regime_classifier" / "lgbm_live.txt"))
+
+    @cached_property
     def classifier_features(self) -> list[str]:
         return load_yaml("models.yaml")["regime_classifier"]["features"]
+
+    @cached_property
+    def live_classifier_features(self) -> list[str]:
+        cfg = load_yaml("models.yaml")["regime_classifier"]
+        return [f for f in cfg["features"] if f not in cfg["live_excluded_features"]]
 
     @cached_property
     def corrector(self) -> LGBMCorrector:
@@ -87,15 +102,46 @@ class ProductBuilder:
         return booster, spec["features"], lambda p: p
 
     @cached_property
-    def event_climatology(self) -> dict[float, xr.DataArray]:
+    def train_obs(self) -> xr.DataArray:
         tr0, tr1 = self.s.split.train
-        obs = IMDGridded(self.data_dir / "raw" / "imd").load(date(tr0, 1, 1), date(tr1, 12, 31))["precip_mm"]
-        return {float(self.thresholds[t]): fit_event_climatology(obs, float(self.thresholds[t]))
+        return IMDGridded(self.data_dir / "raw" / "imd").load(date(tr0, 1, 1), date(tr1, 12, 31))["precip_mm"]
+
+    @cached_property
+    def event_climatology(self) -> dict[float, xr.DataArray]:
+        return {float(self.thresholds[t]): fit_event_climatology(self.train_obs, float(self.thresholds[t]))
                 for t in ("heavy", "very_heavy")}
+
+    @cached_property
+    def rain_climatology(self) -> xr.DataArray:
+        return fit_climatology(self.train_obs)
+
+    @cached_property
+    def land_mask(self) -> xr.DataArray:
+        return self.train_obs.isel(time=0).notnull().drop_vars("time")
+
+    @cached_property
+    def forecast_core_stats(self) -> pd.DataFrame:
+        rows = pd.read_parquet(self.data_dir / "processed" / "regime_features.parquet",
+                               columns=["valid_date", "lead_day", "month", "fc_core_rain_mm"])
+        tr0, tr1 = self.s.split.train
+        return fit_forecast_core_stats(rows[rows["valid_date"].dt.year.between(tr0, tr1)])
 
     @cached_property
     def districts(self) -> DistrictWeights:
         return DistrictWeights.load(self.data_dir / "interim" / "static" / "district_weights")
+
+    @cached_property
+    def classifier_scores(self) -> dict[str, float]:
+        """Validation macro-F1 per classifier from the Phase 5 report ({} if it has not been run)."""
+        report = self.s.paths.model_dir.parent / "reports" / "phase5_validation.json"
+        if not report.is_file():
+            return {}
+        results = json.loads(report.read_text(encoding="utf-8"))["results"]
+        return {name: r["all"]["macro_f1"] for name, r in results.items() if "macro_f1" in r.get("all", {})}
+
+    def _classifier_meta(self, name: str, description: str) -> dict:
+        return {"classifier": description, "classifier_macro_f1": self.classifier_scores.get(name),
+                "rule_macro_f1": self.classifier_scores.get("R0_rule")}
 
     @cached_property
     def validation_rmse(self) -> dict:
@@ -108,6 +154,7 @@ class ProductBuilder:
 
     # ---- build ----
     def build(self, init: date) -> Product:
+        """Product from the archived reforecast tables (training, validation or test years)."""
         year = init.year
         init_ts = pd.Timestamp(init)
         table = pd.read_parquet(self.data_dir / "processed" / f"table_{year}.parquet",
@@ -116,14 +163,51 @@ class ProductBuilder:
             raise ValueError(f"no forecast rows for {init}")
         regime_rows = pd.read_parquet(self.data_dir / "processed" / "regime_features.parquet")
         regime_rows = regime_rows[regime_rows["init_time"] == init_ts].sort_values("lead_day")
-        proba = pd.DataFrame(self.classifier.predict(regime_rows[self.classifier_features].astype(np.float32)),
+        fields = xr.open_dataset(self.data_dir / "interim" / "gefs_fields" / f"fields_{year}.nc").load()
+        fields = fields.sel(init_time=[init_ts])
+        return self._assemble(init, table, regime_rows, fields, self.classifier, self.classifier_features,
+                              {"source": "archive", "forecast": "NOAA GEFSv12 reforecast, control member",
+                               **self._classifier_meta("LGBM", "LightGBM on forecast fields and rainfall "
+                                                               "observed before the forecast was issued"),
+                               "in_season": True, "verification": "observed rainfall attached"})
+
+    def build_live(self, init: date, fc: xr.Dataset, fields: xr.Dataset,
+                   observed: xr.Dataset | None = None) -> Product:
+        """Product from a freshly downloaded operational forecast.
+
+        Uses the classifier trained without observed persistence (IMD publishes each year's grid only after the
+        year ends). `observed`, when IMD has published the valid days, is attached for verification only.
+        """
+        table = build_forecast_table(fc, self.rain_climatology, self.land_mask)
+        if observed is not None:
+            days = pd.DatetimeIndex(table["valid_date"].unique())
+            obs = observed["precip_mm"].reindex(time=days)
+            lookup = obs.sel(time=xr.DataArray(table["valid_date"].to_numpy(), dims="row"),
+                             lat=xr.DataArray(table["lat"].to_numpy(), dims="row"),
+                             lon=xr.DataArray(table["lon"].to_numpy(), dims="row"))
+            table["obs_precip_mm"] = lookup.to_numpy().astype(np.float32)
+        cfg = load_yaml("regimes.yaml")
+        months = list(self.s.season.months)
+        regime_rows = build_classifier_table(fields, fc, self.land_mask, cfg["classifier_features"],
+                                             cfg["synoptic"]["active_break"]["core_zone_box"],
+                                             pd.Series(dtype=float), (min(months), max(months)))
+        regime_rows = add_forecast_anomaly(regime_rows, self.forecast_core_stats).sort_values("lead_day")
+        valid_months = {int(m) for m in table["valid_date"].dt.month.unique()}
+        meta = {"source": "live", "forecast": "NOAA GEFSv12 operational, control member",
+                **self._classifier_meta("LGBM_live", "LightGBM on forecast fields only"),
+                "in_season": valid_months <= set(months),
+                "verification": "observed rainfall attached" if observed is not None
+                else "pending: IMD has not published observations for these days"}
+        return self._assemble(init, table, regime_rows, fields, self.live_classifier,
+                              self.live_classifier_features, meta)
+
+    def _assemble(self, init: date, table: pd.DataFrame, regime_rows: pd.DataFrame, fields: xr.Dataset,
+                  classifier: lgb.Booster, classifier_features: list[str], meta: dict) -> Product:
+        proba = pd.DataFrame(classifier.predict(regime_rows[classifier_features].astype(np.float32)),
                              columns=CLASSES)
         probs = regime_rows[["init_time", "lead_day"]].reset_index(drop=True)
         probs[PROB_COLS] = proba.to_numpy()
         probs["pred_regime"] = proba.idxmax(axis=1)
-
-        fields = xr.open_dataset(self.data_dir / "interim" / "gefs_fields" / f"fields_{year}.nc").load()
-        fields = fields.sel(init_time=[init_ts])
         labels = pd.Series(dtype=object)
         table = add_regime_columns(table, fields, self.terrain, load_yaml("regimes.yaml")["local"], probs, labels)
 
@@ -139,7 +223,7 @@ class ProductBuilder:
             booster, features, calibrate = self.heavy(target)
             table[f"p_{target}"] = calibrate(booster.predict(table[features].astype(np.float32)))
         table["local_regime"] = table[LOCAL_COLS].to_numpy().argmax(axis=1)
-        summary = self._summary(init, probs, table)  # needs the model's own feature names
+        summary = {**self._summary(init, probs, table), **meta}  # needs the model's own feature names
 
         display = table.rename(columns={"nwp_precip_mm": "raw_mm", "obs_precip_mm": "observed_mm"})
         return Product(self._grids(display), self._districts(display), summary)
@@ -188,10 +272,9 @@ class ProductBuilder:
                 "top_correction_features": contrib.get(lead, []),
             }
         return {"init_date": str(init), "data_kind": "real", "mode": self.s.mode,
-                "system": "post-processing of GEFSv12 reforecast rainfall (control member)",
+                "system": "post-processing of GEFSv12 rainfall forecasts (control member)",
                 "correction_model": "C1: LightGBM Tweedie with predicted regime probabilities and local regime as inputs",
                 "heavy_rain_model": "LightGBM binary with regime inputs; very-heavy probabilities isotonic-calibrated on out-of-fold training data",
-                "classifier": "LightGBM multiclass trained 2010-2015 (see reports/phase5_validation.md)",
                 "leads": leads}
 
     def _contributions(self, table: pd.DataFrame) -> dict[int, list[dict]]:

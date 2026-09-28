@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from rainpp import __version__
@@ -142,6 +142,33 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=f"lead {lead} not in product")
         table = table.assign(valid_date=table["valid_date"].astype(str))
         return json.loads(table.to_json(orient="records"))
+
+    @app.get("/forecast/{init}/districts.csv")
+    def forecast_districts_csv(init: date, lead: int = Query(1, ge=1, le=10)) -> Response:
+        """District table for one lead as CSV, most likely heavy rain first; provenance in every row."""
+        import pandas as pd
+
+        summary = json.loads(product_file(init, ".json").read_text(encoding="utf-8"))
+        table = pd.read_parquet(product_file(init, ".districts.parquet"))
+        table = table[table["lead_day"] == lead]
+        if table.empty:
+            raise HTTPException(status_code=404, detail=f"lead {lead} not in product")
+        table = table.sort_values("p_heavy_max", ascending=False, na_position="last")
+        out = pd.DataFrame({
+            "district_id": table["district_id"], "district": table["district_name"], "state": table["state_name"],
+            "forecast_issued_00utc": init.isoformat(), "valid_date": table["valid_date"].astype(str).str[:10],
+            "lead_day": lead,
+            "raw_nwp_mm": table["raw_mm"].round(1), "corrected_mm": table["corrected_mm"].round(1),
+            "quantile_mapped_mm": table["qm_mm"].round(1),
+            "p_heavy_ge_64_5mm_max_cell": table["p_heavy_max"].round(3),
+            "p_very_heavy_ge_115_6mm_max_cell": table["p_very_heavy_max"].round(3),
+            "observed_imd_mm_verification_only": table["observed_mm"].round(1),
+            "grid_coverage_fraction": table["coverage_fraction"].round(3),
+            "product_source": summary.get("source", "archive"), "data_kind": summary.get("data_kind", "real"),
+        })
+        name = f"rainfall_districts_{init.isoformat()}_day{lead}.csv"
+        return Response(out.to_csv(index=False), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
     @app.get("/forecast/{init}/grid")
     def forecast_grid(init: date, var: GRID_VAR, lead: int = Query(1, ge=1, le=10)) -> dict:

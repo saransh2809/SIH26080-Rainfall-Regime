@@ -10,6 +10,7 @@ Verified file facts (Phase 3 inspection, 2018-08-01 init):
 from __future__ import annotations
 
 import logging
+import threading
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ from rainpp.data.sources.base import ForecastSource
 log = logging.getLogger(__name__)
 
 BUCKET = "noaa-gefs-retrospective"
+ECCODES_LOCK = threading.Lock()  # eccodes handle creation is not thread-safe
 # GRIB2 packing stores Y = (R + X * 2**E) / 10**D, so each value is quantised to 2**E / 10**D.
 # Differencing two messages can therefore go negative by up to the sum of their steps; the step
 # varies per message (0.01-0.2 mm seen), so the tolerance is taken from the messages themselves.
@@ -134,7 +136,8 @@ def _decode_messages(data: bytes) -> tuple[dict[tuple[int, int], np.ndarray], di
     steps: dict[tuple[int, int], float] = {}
     offset = 0
     while offset < len(data):
-        gid = eccodes.codes_new_from_message(data[offset:])
+        with ECCODES_LOCK:
+            gid = eccodes.codes_new_from_message(data[offset:])
         try:
             length = eccodes.codes_get(gid, "totalLength")
             nj, ni = eccodes.codes_get(gid, "Nj"), eccodes.codes_get(gid, "Ni")

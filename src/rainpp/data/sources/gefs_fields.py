@@ -21,7 +21,7 @@ import pandas as pd
 import xarray as xr
 
 from rainpp.data.schema import DATA_KIND_ATTR, SOURCE_ATTR, DataKind
-from rainpp.data.sources.gefs import BUCKET
+from rainpp.data.sources.gefs import BUCKET, ECCODES_LOCK
 
 log = logging.getLogger(__name__)
 
@@ -102,14 +102,15 @@ def block_mean(field: np.ndarray, block: int = BLOCK) -> np.ndarray:
 def _decode(data: bytes) -> np.ndarray:
     import eccodes
 
-    gid = eccodes.codes_new_from_message(data)
-    try:
-        nj, ni = eccodes.codes_get(gid, "Nj"), eccodes.codes_get(gid, "Ni")
-        if (nj, ni) != (721, 1440):
-            raise ValueError(f"unexpected grid {nj}x{ni}")
-        return eccodes.codes_get_values(gid).reshape(nj, ni)
-    finally:
-        eccodes.codes_release(gid)
+    with ECCODES_LOCK:
+        gid = eccodes.codes_new_from_message(data)
+        try:
+            nj, ni = eccodes.codes_get(gid, "Nj"), eccodes.codes_get(gid, "Ni")
+            if (nj, ni) != (721, 1440):
+                raise ValueError(f"unexpected grid {nj}x{ni}")
+            return eccodes.codes_get_values(gid).reshape(nj, ni)
+        finally:
+            eccodes.codes_release(gid)
 
 
 class GEFSFields:

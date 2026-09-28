@@ -54,6 +54,20 @@ def fit_climatology(obs_train: xr.DataArray) -> xr.DataArray:
     return smooth.assign_coords(dayofyear=np.arange(1, 367)).rename("obs_climatology_mm")
 
 
+def build_forecast_table(fc: xr.Dataset, climatology: xr.DataArray, land_mask: xr.DataArray) -> pd.DataFrame:
+    """Same columns as build_table for a forecast with no observation yet, over the observed land cells."""
+    feats = forecast_features(fc)
+    vd = valid_dates(fc)
+    feats["obs_climatology_mm"] = climatology.sel(dayofyear=vd.dt.dayofyear).drop_vars("dayofyear")
+    feats["obs_precip_mm"] = xr.full_like(fc[PRECIP_VAR], np.nan)
+    feats = feats.assign_coords(valid_date=vd).where(land_mask)
+    df = feats.to_dataframe().reset_index()
+    df = df[df["nwp_precip_mm"].notna()].reset_index(drop=True)
+    float_cols = df.select_dtypes("float64").columns
+    df[float_cols] = df[float_cols].astype("float32")
+    return df
+
+
 def build_table(fc: xr.Dataset, paired: xr.Dataset, climatology: xr.DataArray | None = None) -> pd.DataFrame:
     """One row per (init_time, lead_day, member, lat, lon) with an observation."""
     feats = forecast_features(fc)

@@ -62,6 +62,9 @@ regime_classifier:
     lambda_l2: 1.0
     verbose: -1
     seed: 42
+  # Live mode: IMD publishes a year's gridded rainfall only after the year ends, so observed persistence is
+  # unavailable for today's forecasts. A second LightGBM is trained without these inputs and used for live runs.
+  live_excluded_features: [obs_core_anom_lag1, obs_core_anom_lag2]
   max_boost_round: 1000
   early_stopping_rounds: 50
   cnn_scalar_features:    # joined to the CNN's pooled map features (maps: u850, v850, vort850, MSLP, PWAT)

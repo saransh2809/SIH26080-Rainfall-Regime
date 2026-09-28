@@ -63,6 +63,12 @@ export interface ForecastSummary {
   heavy_rain_model: string
   classifier: string
   leads: Record<string, LeadSummary>
+  source?: 'archive' | 'live'
+  forecast?: string
+  in_season?: boolean
+  verification?: string
+  classifier_macro_f1?: number | null
+  rule_macro_f1?: number | null
 }
 
 export interface DistrictForecast {

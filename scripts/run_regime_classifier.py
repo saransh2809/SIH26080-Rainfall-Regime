@@ -88,7 +88,12 @@ def main() -> None:
     rounds = choose_rounds(features, cfg["lgbm_params"], train[train.valid_date.dt.year < tr1],
                            train[train.valid_date.dt.year == tr1], cfg)
     lgbm = LGBMRegimeClassifier(features, cfg["lgbm_params"], rounds).fit(train, train.synoptic_regime)
-    log.info("rule vorticity threshold %.2f; LightGBM rounds %d", rule.vort_threshold, rounds)
+    live_features = [f for f in features if f not in cfg["live_excluded_features"]]
+    rounds_live = choose_rounds(live_features, cfg["lgbm_params"], train[train.valid_date.dt.year < tr1],
+                                train[train.valid_date.dt.year == tr1], cfg)
+    lgbm_live = LGBMRegimeClassifier(live_features, cfg["lgbm_params"], rounds_live).fit(train, train.synoptic_regime)
+    log.info("rule vorticity threshold %.2f; LightGBM rounds %d (live variant %d)", rule.vort_threshold, rounds,
+             rounds_live)
 
     fields_dir = settings.paths.data_dir / "interim" / "gefs_fields"
     train_maps, valid_maps = load_maps(train, fields_dir), load_maps(valid, fields_dir)
@@ -101,7 +106,7 @@ def main() -> None:
     cnn.fit(train_maps, train, train.synoptic_regime.to_numpy())
     log.info("CNN epochs chosen on %d: %d", tr1, cnn.epochs)
 
-    models = {"R0_rule": rule, "RF": rf, "LGBM": lgbm}
+    models = {"R0_rule": rule, "RF": rf, "LGBM": lgbm, "LGBM_live": lgbm_live}
     preds = {name: predict_with_confidence(m, valid) for name, m in models.items()}
     cnn_proba = cnn.predict_proba(valid_maps, valid)
     preds["CNN"] = pd.DataFrame({"predicted_regime": cnn_proba.idxmax(axis=1), "confidence": cnn_proba.max(axis=1)})
@@ -131,6 +136,7 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     joblib.dump(rf.model, out / "rf.joblib")
     lgbm.booster.save_model(str(out / "lgbm.txt"))
+    lgbm_live.booster.save_model(str(out / "lgbm_live.txt"))
     torch.save({"state_dict": cnn.net.state_dict(), "epochs": cnn.epochs, "channels": MAP_CHANNELS,
                 "scalar_features": cnn.scalar_features, "map_mean": cnn.map_mean, "map_sd": cnn.map_sd,
                 "scalar_mean": cnn.scalar_mean, "scalar_sd": cnn.scalar_sd}, out / "cnn.pt")
@@ -141,6 +147,7 @@ def main() -> None:
                    validation_metrics={n: {k: r["all"][k] for k in ("accuracy", "balanced_accuracy", "macro_f1")}
                                        for n, r in results.items()},
                    extra={"classes": CLASSES, "lgbm_rounds": rounds, "cnn_epochs": cnn.epochs,
+                          "lgbm_live_rounds": rounds_live, "lgbm_live_features": live_features,
                           "cnn_map_channels": list(MAP_CHANNELS), "rf_feature_importance": rf.feature_importance()})
 
 

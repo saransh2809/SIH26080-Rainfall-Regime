@@ -48,6 +48,29 @@
   color: var(--accent);
 }
 
+.badge-archive {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.badge-live {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.source-note {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+}
+
 .main {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
@@ -363,4 +386,103 @@ tr.observed-row td {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.lang-toggle,
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lang-toggle:hover,
+.button:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.export-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.bulletin {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .app > :not(.bulletin) {
+    display: none !important;
+  }
+
+  .bulletin {
+    display: block;
+    color: #000;
+    font-size: 10.5pt;
+  }
+
+  .bulletin h1 {
+    margin: 0 0 4pt;
+    font-size: 16pt;
+  }
+
+  .bulletin h2 {
+    margin: 10pt 0 4pt;
+    font-size: 12pt;
+  }
+
+  .bulletin header p {
+    margin: 2pt 0;
+  }
+
+  .bulletin table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .bulletin th,
+  .bulletin td {
+    padding: 3pt 4pt;
+    border: 0.5pt solid #999;
+    text-align: left;
+  }
+
+  .bulletin td:nth-child(n + 4) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bulletin-footer {
+    margin-top: 8pt;
+    font-size: 9pt;
+    color: #333;
+  }
 }

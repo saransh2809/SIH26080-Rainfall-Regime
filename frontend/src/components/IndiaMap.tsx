@@ -2,6 +2,7 @@ import type { GeoJSON as LeafletGeoJSON, Layer, LeafletMouseEvent, PathOptions }
 import { useEffect, useRef } from 'react'
 import { GeoJSON, MapContainer, Pane } from 'react-leaflet'
 import type { GeoJson } from '../api'
+import { useT } from '../i18n'
 import { classColor, classOf, type Scale } from '../scales'
 
 const INDIA_BOUNDS: [[number, number], [number, number]] = [[6.0, 66.0], [38.8, 100.5]]
@@ -31,6 +32,9 @@ export function IndiaMap({ states, districts, selectedId, onSelect, choropleth }
   onSelectRef.current = onSelect
   const choroplethRef = useRef(choropleth)
   choroplethRef.current = choropleth
+  const t = useT()
+  const noDataRef = useRef(t('noData'))
+  noDataRef.current = t('noData')
 
   const districtStyle = (feature?: GeoJSON.Feature): PathOptions => {
     const id = feature?.properties?.district_id as number
@@ -62,7 +66,7 @@ export function IndiaMap({ states, districts, selectedId, onSelect, choropleth }
     layer.bindTooltip(() => {
       const c = choroplethRef.current
       const v = c?.values.get(p.district_id as number)
-      const value = c ? (v == null ? ' — no data' : ` — ${c.label}: ${c.scale.format(v)}`) : ''
+      const value = c ? (v == null ? ` — ${noDataRef.current}` : ` — ${c.label}: ${c.scale.format(v)}`) : ''
       return `${p.district_name}, ${p.state_name}${value}`
     }, { sticky: true })
     layer.on('click', (e: LeafletMouseEvent) => {

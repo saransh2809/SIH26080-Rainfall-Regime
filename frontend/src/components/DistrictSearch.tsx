@@ -1,8 +1,10 @@
 import { useId, useMemo, useState } from 'react'
 import type { District } from '../api'
+import { useT } from '../i18n'
 
 /** Find a district by name; options carry the state so duplicate names (e.g. two "Raigarh") stay distinct. */
 export function DistrictSearch({ districts, onSelect }: { districts: District[]; onSelect: (id: number) => void }) {
+  const t = useT()
   const listId = useId()
   const [text, setText] = useState('')
   const byLabel = useMemo(
@@ -19,10 +21,10 @@ export function DistrictSearch({ districts, onSelect }: { districts: District[];
 
   return (
     <label className="control">
-      <span>Find district</span>
-      <input type="search" list={listId} value={text} placeholder="e.g. Mumbai"
+      <span>{t('findDistrict')}</span>
+      <input type="search" list={listId} value={text} placeholder={t('findPlaceholder')}
         onChange={(e) => choose(e.target.value)} aria-describedby={`${listId}-hint`} />
-      <span id={`${listId}-hint`} className="visually-hidden">Type a district name and choose a suggestion</span>
+      <span id={`${listId}-hint`} className="visually-hidden">{t('findHint')}</span>
       <datalist id={listId}>
         {labels.map((label) => <option key={label} value={label} />)}
       </datalist>

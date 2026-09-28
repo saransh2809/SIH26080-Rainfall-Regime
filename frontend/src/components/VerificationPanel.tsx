@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ModelScores, VerificationReport } from '../api'
+import { hasKey, useT } from '../i18n'
 
 type Direction = 'lower' | 'higher' | 'zero'
 
@@ -23,14 +24,6 @@ const ROWS: Row[] = [
   { label: `FSS ≥${HEAVY} mm (9×9)`, get: (s) => s.fss[HEAVY]?.['9'], better: 'higher' },
 ]
 
-const MODEL_LABELS: Record<string, string> = {
-  A_raw_nwp: 'Raw NWP',
-  B1_quantile_mapping: 'Quantile mapping',
-  B2_global_lgbm: 'Global LightGBM',
-  C1_regime_features: 'Regime-aware C1',
-  C2_regime_split: 'Regime-split C2',
-}
-
 function bestIndex(values: (number | null | undefined)[], better: Direction): number {
   let best = -1
   values.forEach((v, i) => {
@@ -45,6 +38,8 @@ function bestIndex(values: (number | null | undefined)[], better: Direction): nu
 /** Real validation scores; undefined scores show "n/a", never 0. */
 export function VerificationPanel({ report, title, models: only }: { report: VerificationReport; title: string; models?: string[] }) {
   const leads = Object.keys(report.results)
+  const t = useT()
+  const modelLabel = (m: string) => (hasKey(`model_${m}`) ? t(`model_${m}` as 'model_A_raw_nwp') : m)
   const [lead, setLead] = useState(leads[0])
   const byModel = report.results[lead]
   const models = Object.keys(byModel).filter((m) => !only || only.includes(m))
@@ -53,18 +48,18 @@ export function VerificationPanel({ report, title, models: only }: { report: Ver
     <section className="panel" aria-labelledby="verif-title">
       <h2 id="verif-title">{title}</h2>
       <p className="muted">{report.scope} · data: {report.data_kind.toUpperCase()}</p>
-      <div className="segmented" role="group" aria-label="Verification lead day">
+      <div className="segmented" role="group" aria-label={t('verifLead')}>
         {leads.map((l) => (
           <button key={l} type="button" aria-pressed={l === lead} onClick={() => setLead(l)}>
-            Day {l}
+            {t('day', { n: l })}
           </button>
         ))}
       </div>
       <table className="scores" style={{ marginTop: 12 }}>
         <thead>
           <tr>
-            <th scope="col">Metric</th>
-            {models.map((m) => <th key={m} scope="col">{MODEL_LABELS[m] ?? m}</th>)}
+            <th scope="col">{t('metric')}</th>
+            {models.map((m) => <th key={m} scope="col">{modelLabel(m)}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -76,7 +71,7 @@ export function VerificationPanel({ report, title, models: only }: { report: Ver
                 <th scope="row">{row.label}</th>
                 {values.map((v, i) => (
                   <td key={models[i]} className={`num${i === best ? ' best' : ''}`}>
-                    {v == null || Number.isNaN(v) ? 'n/a' : v.toFixed(3)}
+                    {v == null || Number.isNaN(v) ? t('na') : v.toFixed(3)}
                   </td>
                 ))}
               </tr>
@@ -84,7 +79,7 @@ export function VerificationPanel({ report, title, models: only }: { report: Ver
           })}
         </tbody>
       </table>
-      <p className="muted" style={{ marginTop: 8 }}>Bold = best in row. No confidence intervals on this table.</p>
+      <p className="muted" style={{ marginTop: 8 }}>{t('verifNote')}</p>
     </section>
   )
 }

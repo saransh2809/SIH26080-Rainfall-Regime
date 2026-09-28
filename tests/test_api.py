@@ -63,5 +63,24 @@ def test_missing_product_is_404_not_invented() -> None:
     assert client.get("/forecast/1999-01-01").status_code == 404
 
 
+def test_district_csv_is_sorted_and_labelled() -> None:
+    products = client.get("/products").json()
+    if not products:
+        pytest.skip("no forecast products built")
+    r = client.get(f"/forecast/{products[0]}/districts.csv", params={"lead": 1})
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
+    assert "attachment" in r.headers["content-disposition"]
+    lines = r.text.splitlines()
+    header = lines[0].split(",")
+    assert "observed_imd_mm_verification_only" in header and "product_source" in header
+    p = header.index("p_heavy_ge_64_5mm_max_cell")
+    values = [float(v.split(",")[p]) for v in lines[1:6] if v.split(",")[p]]
+    assert values == sorted(values, reverse=True)
+
+
+def test_district_csv_rejects_bad_lead() -> None:
+    assert client.get("/forecast/2017-08-28/districts.csv", params={"lead": 99}).status_code == 422
+
+
 def test_products_endpoint_returns_list() -> None:
     assert isinstance(client.get("/products").json(), list)

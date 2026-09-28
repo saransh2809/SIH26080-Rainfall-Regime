@@ -53,10 +53,11 @@ class Split(BaseModel):
     train: tuple[int, int]
     validation: tuple[int, int]
     test: tuple[int, int]
+    operational_test: tuple[int, int] | None = None  # GEFSv12 operational runs, scored once like the test years
 
     @model_validator(mode="after")
     def _check_chronological(self) -> Split:
-        periods = [self.train, self.validation, self.test]
+        periods = [self.train, self.validation, self.test] + ([self.operational_test] if self.operational_test else [])
         for start, end in periods:
             if start > end:
                 raise ValueError(f"split period {start}-{end} is reversed")
