@@ -93,6 +93,14 @@ class ProductBuilder:
     def qm(self) -> QuantileMapping:
         return QuantileMapping.load(self.model_dir / "quantile_mapping" / "quantile_mapping.npz")
 
+    @cached_property
+    def heavy_description(self) -> str:
+        calibrated = [t for t, on in load_yaml("models.yaml")["heavy_rain"]["calibrate"].items() if on]
+        base = "LightGBM binary with regime inputs"
+        if not calibrated:
+            return base + "; probabilities used as fitted (isotonic calibration did not improve validation scores)"
+        return base + "; isotonic-calibrated on out-of-fold training data: " + ", ".join(calibrated)
+
     def heavy(self, target: str) -> tuple[lgb.Booster, list[str], callable]:
         directory = self.model_dir / "heavy_rain" / f"P_regime_{target}"
         spec = json.loads(next(directory.glob("heavy_rain_ge_*.json")).read_text(encoding="utf-8"))
@@ -294,7 +302,7 @@ class ProductBuilder:
         return {"init_date": str(init), "data_kind": "real", "mode": self.s.mode,
                 "system": "post-processing of GEFSv12 rainfall forecasts (control member)",
                 "correction_model": "C1: LightGBM Tweedie with predicted regime probabilities and local regime as inputs",
-                "heavy_rain_model": "LightGBM binary with regime inputs; very-heavy probabilities isotonic-calibrated on out-of-fold training data",
+                "heavy_rain_model": self.heavy_description,
                 "leads": leads}
 
     def _contributions(self, table: pd.DataFrame) -> dict[int, list[dict]]:

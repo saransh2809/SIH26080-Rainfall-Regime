@@ -84,11 +84,12 @@ regime_correction:
   bootstrap: {block_days: 5, n_boot: 200}
 
 heavy_rain:
-  # Isotonic calibration (fitted on out-of-fold training predictions), chosen on validation 2016-2017:
-  #   heavy: already reliable; calibration leaves Brier unchanged (n.s.) and lowers AUC 0.858 -> 0.848
-  #   very_heavy: raw model over-confident (0.43 -> 0.19 observed); calibration improves Brier
-  #               significantly (BSS 0.013 -> 0.023) at the cost of AUC 0.873 -> 0.782
-  calibrate: {heavy: false, very_heavy: true}
+  # Isotonic calibration (fitted on out-of-fold training predictions), chosen on validation 2016-2017 with the
+  # 16-season models (reports/phase7_validation.md):
+  #   heavy: mean probability already equals the base rate; calibration changes Brier by -3e-6 (n.s.)
+  #   very_heavy: calibration changes Brier by +7e-6 (n.s.) but lowers AUC 0.886 -> 0.854
+  # (With 6 training seasons very_heavy was over-confident and calibration helped; with 16 it no longer does.)
+  calibrate: {heavy: false, very_heavy: false}
 
 evaluation:
   fss_threshold_mm: [15.6, 64.5]

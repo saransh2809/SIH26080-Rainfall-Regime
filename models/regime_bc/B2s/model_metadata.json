@@ -3,7 +3,7 @@
   "model_type": "LightGBM Tweedie regressor",
   "package_version": "0.1.0",
   "data_kind": "real",
-  "created_utc": "2026-09-27T20:54:55+00:00",
+  "created_utc": "2026-09-28T21:10:43+00:00",
   "features": [
     "nwp_precip_mm",
     "nwp_log1p",
@@ -21,7 +21,7 @@
     "coast_km"
   ],
   "training_period": [
-    2010,
+    2000,
     2015
   ],
   "validation_period": [
@@ -34,16 +34,16 @@
   },
   "validation_metrics": {
     "1": {
-      "rmse": 13.275961363713263,
-      "bias": -0.22947420269069466
+      "rmse": 13.158121015225396,
+      "bias": -0.22158871205574407
     },
     "2": {
-      "rmse": 13.824779368290642,
-      "bias": -0.2651006148806112
+      "rmse": 13.737899204905974,
+      "bias": -0.300475535186552
     },
     "3": {
-      "rmse": 14.207634681744493,
-      "bias": -0.1915920196718369
+      "rmse": 14.13313584849788,
+      "bias": -0.2702373231626723
     }
   }
 }

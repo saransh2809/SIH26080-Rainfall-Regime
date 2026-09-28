@@ -1,0 +1,55 @@
+{
+  "validation_years": [
+    2016,
+    2017
+  ],
+  "initialisations": 41,
+  "rows": 123,
+  "native_recomputation_max_abs_error": 2.958984373435669e-05,
+  "regime_argmax_agreement": 0.967479674796748,
+  "mean_max_abs_probability_change": 0.017942178904063858,
+  "features": {
+    "llj_u850": {
+      "mean_abs_diff": 0.007146696575801014,
+      "mean_diff": -0.007146696575801014,
+      "feature_sd": 3.0693003596599997,
+      "mean_abs_diff_in_sd": 0.002328444837048364
+    },
+    "central_u850": {
+      "mean_abs_diff": 0.004795702763355237,
+      "mean_diff": -0.0016718816561314721,
+      "feature_sd": 3.892993999120204,
+      "mean_abs_diff_in_sd": 0.0012318803379709911
+    },
+    "trough_vort_max": {
+      "mean_abs_diff": 0.9423328116353332,
+      "mean_diff": -0.9362912435721559,
+      "feature_sd": 7.413175106048584,
+      "mean_abs_diff_in_sd": 0.1271159520927088
+    },
+    "trough_vort_mean": {
+      "mean_abs_diff": 0.005152492730431797,
+      "mean_diff": -0.002468723386183576,
+      "feature_sd": 0.4487245563447921,
+      "mean_abs_diff_in_sd": 0.011482528998196195
+    },
+    "trough_mslp_min": {
+      "mean_abs_diff": 0.03940792682926823,
+      "mean_diff": 0.03231626016260571,
+      "feature_sd": 3.3680267333984375,
+      "mean_abs_diff_in_sd": 0.011700597990653264
+    },
+    "mslp_south_minus_trough": {
+      "mean_abs_diff": 0.007592457272176404,
+      "mean_diff": -0.007585161654362783,
+      "feature_sd": 2.081098063060877,
+      "mean_abs_diff_in_sd": 0.0036482938535868058
+    },
+    "core_pwat_mm": {
+      "mean_abs_diff": 0.0,
+      "mean_diff": 0.0,
+      "feature_sd": 7.505291728431834,
+      "mean_abs_diff_in_sd": 0.0
+    }
+  }
+}

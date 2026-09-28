@@ -133,8 +133,8 @@ const STRINGS = {
     hi: 'C1: LightGBM Tweedie, अनुमानित रेजीम संभावनाओं और स्थानीय रेजीम को इनपुट के रूप में लेकर',
   },
   heavyModel: {
-    en: 'LightGBM binary with regime inputs; very-heavy probabilities isotonic-calibrated on out-of-fold training data',
-    hi: 'रेजीम इनपुट के साथ LightGBM द्वि-वर्गीय; बहुत भारी वर्षा की संभावनाएँ प्रशिक्षण डेटा पर आइसोटोनिक अंशांकित',
+    en: 'LightGBM binary with regime inputs; probabilities used as fitted (isotonic calibration did not improve validation scores)',
+    hi: 'रेजीम इनपुट के साथ LightGBM द्वि-वर्गीय; संभावनाएँ जैसी प्रशिक्षित हुईं वैसी ही (आइसोटोनिक अंशांकन से सत्यापन अंक नहीं सुधरे)',
   },
   validationRmse: { en: 'Validation RMSE', hi: 'सत्यापन RMSE' },
   rmseLine: {

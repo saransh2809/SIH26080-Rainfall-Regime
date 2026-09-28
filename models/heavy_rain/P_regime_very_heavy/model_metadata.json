@@ -3,7 +3,7 @@
   "model_type": "LightGBM binary (log-loss, unweighted)",
   "package_version": "0.1.0",
   "data_kind": "real",
-  "created_utc": "2026-09-27T21:17:20+00:00",
+  "created_utc": "2026-09-28T21:33:17+00:00",
   "features": [
     "nwp_precip_mm",
     "nwp_log1p",
@@ -29,7 +29,7 @@
     "local_OROGRAPHIC"
   ],
   "training_period": [
-    2010,
+    2000,
     2015
   ],
   "validation_period": [
@@ -41,10 +41,10 @@
     "target": "IMD gridded rainfall >= threshold"
   },
   "validation_metrics": {
-    "brier": 0.0029508821856443707,
-    "bss_vs_climatology": 0.013323397815546478,
-    "roc_auc": 0.8730892307344719
+    "brier": 0.002868285025400895,
+    "bss_vs_climatology": 0.037463091437710205,
+    "roc_auc": 0.8860343614430108
   },
   "threshold_mm": 115.6,
-  "rounds": 85
+  "rounds": 138
 }

@@ -1,0 +1,31 @@
+{
+  "features": [
+    "nwp_precip_mm",
+    "nwp_log1p",
+    "nwp_mean_3x3",
+    "nwp_max_3x3",
+    "nwp_mean_7x7",
+    "nwp_max_7x7",
+    "obs_climatology_mm",
+    "doy_sin",
+    "doy_cos",
+    "lat",
+    "lon",
+    "lead_day",
+    "elevation_m",
+    "coast_km",
+    "local_INLAND",
+    "local_COASTAL",
+    "local_OROGRAPHIC"
+  ],
+  "regime_column": "pred_regime",
+  "min_rows": 200000,
+  "rounds": 376,
+  "regimes": [
+    "ACTIVE",
+    "BREAK",
+    "MONSOON_DEPRESSION",
+    "NORMAL"
+  ],
+  "fallback_regimes": []
+}

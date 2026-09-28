@@ -29,9 +29,12 @@ observation:
   source: imd_gridded
 
 split:                  # chronological, inclusive years
-  train: [2010, 2015]
+  train: [2000, 2015]   # 16 seasons (extended from 2010-2015 once the 2000s reforecast was downloaded)
   validation: [2016, 2017]
   test: [2018, 2019]
+  # NOAA GEFSv12 *operational* forecasts (live-mode inputs) with IMD observations; never used for training or
+  # tuning, scored once with the frozen models alongside the test years.
+  operational_test: [2021, 2025]
 
 api:
   host: 127.0.0.1

@@ -30,6 +30,7 @@ from rainpp.data.sources.imd import IMDGridded
 from rainpp.models.global_bc import LGBMCorrector
 from rainpp.models.regime_bc import RegimeSplitCorrector
 from rainpp.products import ProductBuilder
+from rainpp.regimes.labels import core_zone_series, depression_days, synoptic_labels
 from rainpp.regimes.local import LOCAL_CODES
 from rainpp.verification.bootstrap import block_bootstrap_difference
 from rainpp.verification.metrics import calculate_ets, calculate_rmse
@@ -83,6 +84,17 @@ def operational_rows(builder: ProductBuilder, years: range, labels: pd.Series, b
         parts.append(table[KEEP + [f"clim_p_ge_{t_heavy}", f"clim_p_ge_{t_very}"]])
         log.info("operational %d: %d rows", year, len(table))
     return pd.concat(parts, ignore_index=True)
+
+
+def observed_labels(settings, years: range) -> pd.Series:
+    """Synoptic regime labels for extra years with the same rules as build_regimes.py (scoring breakdown only)."""
+    syn = load_yaml("regimes.yaml")["synoptic"]
+    clim0, _ = syn["active_break"]["climatology_years"]
+    obs = IMDGridded(settings.paths.data_dir / "raw" / "imd").load(date(clim0, 1, 1), date(years[-1], 12, 31))
+    core = core_zone_series(obs, syn["active_break"]["core_zone_box"])
+    track = pd.read_parquet(settings.paths.data_dir / "raw" / "tracks" / "imdtrack_observations.parquet")
+    labels = synoptic_labels(core, depression_days(track, syn["depression"]["box"]), syn, settings.season.months)
+    return labels.loc[labels.index.year.isin(list(years)), "synoptic_regime"]
 
 
 def by_regime(rows: pd.DataFrame, column: str) -> dict:
@@ -196,7 +208,8 @@ def main() -> None:
         if settings.split.operational_test is None:
             raise SystemExit("settings.split.operational_test is not configured")
         o0, o1 = settings.split.operational_test
-        rows = operational_rows(builder, range(o0, o1 + 1), labels, b2, c2, t_heavy, t_very)
+        op_labels = pd.concat([labels, observed_labels(settings, range(o0, o1 + 1))])
+        rows = operational_rows(builder, range(o0, o1 + 1), op_labels, b2, c2, t_heavy, t_very)
         datasets["operational"] = {
             "description": f"GEFSv12 operational forecasts, JJAS {o0}–{o1}, live pipeline (forecast-only classifier)",
             **evaluate(rows, settings, thresholds_mm, bootstrap)}
