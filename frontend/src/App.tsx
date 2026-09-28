@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from './api'
 import './App.css'
 import { DistrictPanel } from './components/DistrictPanel'
+import { DistrictSearch } from './components/DistrictSearch'
 import { ExplanationPanel } from './components/ExplanationPanel'
 import { IndiaMap } from './components/IndiaMap'
 import { Legend } from './components/Legend'
@@ -10,6 +11,7 @@ import { RegimeCard } from './components/RegimeCard'
 import { VerificationPanel } from './components/VerificationPanel'
 import { LAYERS, type LayerKey } from './scales'
 import { useApi } from './useApi'
+import { readViewState, writeViewState } from './urlState'
 
 const COMPARISON_MODELS = ['A_raw_nwp', 'B1_quantile_mapping', 'B2_global_lgbm', 'C1_regime_features', 'C2_regime_split']
 
@@ -21,12 +23,19 @@ export default function App() {
   const products = useApi(api.products)
   const phase6 = useApi(() => api.verification('phase6'))
 
-  const [chosenInit, setInit] = useState<string | null>(null)
-  const [lead, setLead] = useState(1)
-  const [layer, setLayer] = useState<LayerKey>('corrected_mm')
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [initial] = useState(() => readViewState(window.location.search))
+  const [chosenInit, setInit] = useState<string | null>(initial.init)
+  const [lead, setLead] = useState(initial.lead)
+  const [layer, setLayer] = useState<LayerKey>(initial.layer)
+  const [selectedId, setSelectedId] = useState<number | null>(initial.district)
 
-  const init = chosenInit ?? (products.state === 'ready' && products.data.length ? products.data[0] : null)
+  const available = products.state === 'ready' ? products.data : []
+  const init = chosenInit && available.includes(chosenInit) ? chosenInit : (available[0] ?? null)
+
+  // Keep the URL in step with the view so it can be shared or bookmarked.
+  useEffect(() => {
+    window.history.replaceState(null, '', writeViewState({ init, lead, layer, district: selectedId }))
+  }, [init, lead, layer, selectedId])
 
   const summary = useApi(() => (init ? api.forecast(init) : Promise.reject(new Error('no product'))), init ?? '')
   const districtForecast = useApi(
@@ -73,6 +82,7 @@ export default function App() {
             ))}
           </div>
         </div>
+        {districts.state === 'ready' && <DistrictSearch districts={districts.data} onSelect={setSelectedId} />}
         <div className="control">
           <span>Map layer</span>
           <div className="segmented" role="group" aria-label="Map layer">

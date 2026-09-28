@@ -343,3 +343,24 @@ tr.observed-row td {
     overflow: visible;
   }
 }
+
+.control input[type='search'] {
+  min-height: 36px;
+  min-width: 220px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

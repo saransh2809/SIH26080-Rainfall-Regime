@@ -29,6 +29,7 @@ def load_districts(path: Path) -> gpd.GeoDataFrame:
     gdf = gpd.read_file(path).to_crs("EPSG:4326")
     gdf["geometry"] = gdf.geometry.apply(make_valid)
     gdf = gdf.rename(columns={"censuscode": "district_id", "DISTRICT": "district_name", "ST_NM": "state_name"})
+    gdf["district_id"] = pd.to_numeric(gdf["district_id"], errors="raise").astype(int)  # stored as text in the .dbf
     if gdf["district_id"].duplicated().any():
         raise ValueError("district ids are not unique")
     return gdf[["district_id", "district_name", "state_name", "geometry"]].reset_index(drop=True)

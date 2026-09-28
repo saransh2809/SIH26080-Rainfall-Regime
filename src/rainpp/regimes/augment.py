@@ -73,6 +73,7 @@ def add_regime_columns(table: pd.DataFrame, fields: xr.Dataset, terrain: xr.Data
     table = table.merge(probs, on=["init_time", "lead_day"], how="left", validate="many_to_one")
     if table[PROB_COLS].isna().any().any():
         raise ValueError("rows without regime probabilities")
+    table[PROB_COLS] = table[PROB_COLS].astype(np.float32)
     observed = labels.reindex(table["valid_date"]).to_numpy()
     for c in CLASSES:
         table[f"obs_{c}"] = (observed == c).astype(np.float32)
@@ -80,12 +81,28 @@ def add_regime_columns(table: pd.DataFrame, fields: xr.Dataset, terrain: xr.Data
     return table
 
 
+def checkerboard_mask(lat: np.ndarray, lon: np.ndarray, resolution_deg: float, every: int) -> np.ndarray:
+    """Keep 1 in `every` cells in a regular diagonal pattern (every=1 keeps all)."""
+    i = np.rint(np.asarray(lat) / resolution_deg).astype(int)
+    j = np.rint(np.asarray(lon) / resolution_deg).astype(int)
+    return (i + j) % every == 0
+
+
 def load_augmented(data_dir: Path, years: range, terrain: xr.Dataset, local_cfg: dict,
-                   probs: pd.DataFrame, labels: pd.Series) -> pd.DataFrame:
+                   probs: pd.DataFrame, labels: pd.Series, cell_every: int = 1,
+                   columns: list[str] | None = None, resolution_deg: float = 0.25) -> pd.DataFrame:
+    """Augmented tables for `years`.
+
+    cell_every > 1 keeps a checkerboard subset of cells (memory control for model FITTING only; evaluation
+    always uses every cell). `columns` drops everything else after augmentation.
+    """
     parts = []
     for year in years:
         table = pd.read_parquet(data_dir / "processed" / f"table_{year}.parquet")
+        if cell_every > 1:
+            table = table[checkerboard_mask(table["lat"], table["lon"], resolution_deg, cell_every)]
         fields = xr.open_dataset(data_dir / "interim" / "gefs_fields" / f"fields_{year}.nc").load()
-        parts.append(add_regime_columns(table, fields, terrain, local_cfg, probs, labels))
-        log.info("%d: regime columns added", year)
+        table = add_regime_columns(table.reset_index(drop=True), fields, terrain, local_cfg, probs, labels)
+        parts.append(table[columns] if columns else table)
+        log.info("%d: regime columns added (%d rows)", year, len(table))
     return pd.concat(parts, ignore_index=True)

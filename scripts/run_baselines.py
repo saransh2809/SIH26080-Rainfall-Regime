@@ -24,6 +24,7 @@ from rainpp.config import PROJECT_ROOT, load_settings, load_yaml
 from rainpp.models.global_bc import LGBMCorrector
 from rainpp.models.quantile_mapping import QuantileMapping
 from rainpp.models.registry import write_metadata
+from rainpp.regimes.augment import checkerboard_mask
 from rainpp.verification.report import compare, to_markdown
 
 log = logging.getLogger("run_baselines")
@@ -57,12 +58,15 @@ def main() -> None:
 
     t = time.time()
     g = cfg["global_lgbm"]
-    inner_train, inner_stop = train[train.valid_date.dt.year < tr1], train[train.valid_date.dt.year == tr1]
+    lgbm_rows = train[checkerboard_mask(train["lat"], train["lon"], settings.domain.resolution_deg,
+                                        cfg["training"]["cell_every"])]
+    inner_train = lgbm_rows[lgbm_rows.valid_date.dt.year < tr1]
+    inner_stop = lgbm_rows[lgbm_rows.valid_date.dt.year == tr1]
     probe = LGBMCorrector(cfg["features"], g["params"], g["num_boost_round"], g["early_stopping_rounds"])
     probe.fit(inner_train, inner_stop)
     rounds = probe.booster.best_iteration
     log.info("early stopping on %d chose %d rounds", tr1, rounds)
-    lgbm = LGBMCorrector(cfg["features"], g["params"]).fit_fixed_rounds(train, rounds)
+    lgbm = LGBMCorrector(cfg["features"], g["params"]).fit_fixed_rounds(lgbm_rows, rounds)
     valid["pred_lgbm"] = lgbm.predict(valid)
     log.info("global LightGBM refit on %d-%d in %.0fs", tr0, tr1, time.time() - t)
 

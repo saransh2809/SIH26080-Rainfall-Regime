@@ -112,8 +112,19 @@ Monsoon lows (any intensity) are present on 68% of days, too often to form a use
   A slope threshold (10 m/km) was tried first and rejected: GEFS 0.25° terrain smooths the Western Ghats to a
   90th-percentile slope of 7.7 m/km, so only 5% of the Ghats qualified. The forced-ascent rule gives ~31% of the Ghats
   box at the July peak (the rest is lee slope) and ~0% on the Deccan interior; its seasonal cycle (100 → 174 → 73 → 47
-  cells from June to September 2011) follows the monsoon westerlies. The 0.05 m/s value was chosen on one training date:
-  a sensitivity analysis is still owed.
+  cells from June to September 2011) follows the monsoon westerlies. The 0.05 m/s value was first chosen on one training
+  date; the sensitivity analysis below (training years 2010–2015, lead 1, 3.6 M cell-days) supports it:
+
+  | Threshold (m/s) | Share of cell-days | Mean obs. rain in / out (mm) | Heavy-rain frequency in / out | Share of all heavy events |
+  |---|---|---|---|---|
+  | 0.02 | 10.1% | 14.9 / 6.1 | 4.2× | 32% |
+  | 0.03 | 6.0% | 18.2 / 6.3 | 5.3× | 25% |
+  | **0.05** | **2.7%** | **24.3 / 6.5** | **7.4×** | **17%** |
+  | 0.08 | 1.0% | 33.4 / 6.7 | 11.2× | 10% |
+  | 0.12 | 0.2% | 50.7 / 6.9 | 19.9× | 4% |
+
+  Heavy-rain frequency rises monotonically with forecast forced ascent, so the class is physically meaningful; 0.05 m/s
+  balances contrast against coverage. Using forced ascent as a *continuous* predictor is a candidate improvement.
 - **COASTAL**: ≤ 100 km from the GEFS coastline. **INLAND**: otherwise.
 - Limitation: over terrain above ~1.5 km the 850 hPa wind is an extrapolation below ground.
 

@@ -1,5 +1,11 @@
 # Model settings. Hyperparameters are chosen on the VALIDATION years only.
 
+training:
+  # Memory control for FITTING LightGBM models only: keep 1 in `cell_every` grid cells (diagonal checkerboard).
+  # Heuristic — neighbouring 0.25° cells are strongly correlated, so little information is lost. Quantile
+  # mapping and every evaluation always use all cells. 1 = no subsampling.
+  cell_every: 2
+
 features:                 # forecast-time features shared by the ML correctors
   - nwp_precip_mm
   - nwp_log1p

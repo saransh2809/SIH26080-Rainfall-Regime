@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from rainpp.api.app import create_app
@@ -38,6 +39,13 @@ def test_geo_layers_are_whitelisted() -> None:
     assert client.get("/geo/rivers").status_code == 422
     body = client.get("/geo/states").json()
     assert body["type"] == "FeatureCollection" and len(body["features"]) > 20
+
+
+def test_district_ids_are_integers() -> None:
+    response = client.get("/districts")
+    if response.status_code == 404:
+        pytest.skip("district weights not built")
+    assert all(isinstance(d["district_id"], int) for d in response.json())
 
 
 def test_model_info_lists_every_model() -> None:

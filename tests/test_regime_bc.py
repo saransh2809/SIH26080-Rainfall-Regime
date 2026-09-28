@@ -63,3 +63,13 @@ def test_regime_qm_learns_opposite_biases_and_falls_back() -> None:
         assert 0.8 < ratio < 1.25, (regime, ratio)
     sparse = RegimeQuantileMapping("regime", min_days=10_000).fit(train)
     assert sorted(sparse.fallback_regimes) == ["ACTIVE", "BREAK"]
+
+
+def test_checkerboard_keeps_regular_half_of_cells() -> None:
+    from rainpp.regimes.augment import checkerboard_mask
+
+    lat, lon = np.meshgrid(np.arange(10.0, 12.0, 0.25), np.arange(70.0, 72.0, 0.25), indexing="ij")
+    mask = checkerboard_mask(lat.ravel(), lon.ravel(), 0.25, 2).reshape(lat.shape)
+    assert mask.mean() == 0.5
+    assert not (mask[:, :-1] & mask[:, 1:]).any()   # no two kept cells side by side
+    assert checkerboard_mask(lat.ravel(), lon.ravel(), 0.25, 1).all()

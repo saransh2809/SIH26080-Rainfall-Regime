@@ -69,8 +69,12 @@ def main() -> None:
     terrain = static_terrain(xr.open_dataset(data_dir / "interim" / "static" / "static.nc").load(),
                              settings.domain.resolution_deg)
 
-    train = load_augmented(data_dir, train_years, terrain, rcfg["local"], probs, labels)
-    valid = load_augmented(data_dir, valid_years, terrain, rcfg["local"], probs, labels)
+    needed = (mcfg["features"] + bcfg["static_features"] + PROB_COLS + LOCAL_COLS + ORACLE_COLS
+              + ["pred_regime", "obs_regime", "valid_date", "lead_day", "lat", "lon", "obs_precip_mm"])
+    needed = list(dict.fromkeys(needed))
+    train = load_augmented(data_dir, train_years, terrain, rcfg["local"], probs, labels,
+                           cell_every=mcfg["training"]["cell_every"], columns=needed)
+    valid = load_augmented(data_dir, valid_years, terrain, rcfg["local"], probs, labels, columns=needed)
     base = mcfg["features"]
     static = bcfg["static_features"]
     feature_sets = {"B2s": base + static, "C1": base + static + PROB_COLS + LOCAL_COLS,

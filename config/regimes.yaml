@@ -42,5 +42,5 @@ local:                  # one label per grid cell per forecast; computed from fo
     # Terrain-forced ascent w = V850 · grad(h) from the FORECAST 850 hPa wind and GEFS model terrain.
     # 0.05 m/s chosen after inspecting one training-year date (2011-07-15): Western Ghats reach ~0.12,
     # the Deccan interior ~0.03. A 10 m/km slope cut was rejected: model terrain smooths the Ghats to
-    # a 90th-percentile slope of 7.7 m/km. Sensitivity analysis pending.
+    # a 90th-percentile slope of 7.7 m/km. Sensitivity analysis (training years): METHODOLOGY.md section 5.2.
     min_forced_ascent_ms: 0.05

@@ -46,8 +46,8 @@ def main() -> None:
     terrain = static_terrain(xr.open_dataset(data_dir / "interim" / "static" / "static.nc").load(),
                              settings.domain.resolution_deg)
     keep = ["valid_date", "lead_day", "lat", "lon", "nwp_precip_mm", "obs_precip_mm", "pred_regime", "obs_regime"]
-    train = load_augmented(data_dir, train_years, terrain, rcfg["local"], probs, labels)[keep]
-    valid = load_augmented(data_dir, valid_years, terrain, rcfg["local"], probs, labels)[keep]
+    train = load_augmented(data_dir, train_years, terrain, rcfg["local"], probs, labels, columns=keep)
+    valid = load_augmented(data_dir, valid_years, terrain, rcfg["local"], probs, labels, columns=keep)
 
     valid["pred_B1"] = QuantileMapping.load(model_dir / "quantile_mapping" / "quantile_mapping.npz").predict(valid)
     c3 = RegimeQuantileMapping("pred_regime").fit(train)

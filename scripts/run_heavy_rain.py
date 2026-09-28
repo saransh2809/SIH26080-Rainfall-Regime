@@ -65,8 +65,11 @@ def main() -> None:
                                    mcfg["regime_classifier"], rounds)
     terrain = static_terrain(xr.open_dataset(data_dir / "interim" / "static" / "static.nc").load(),
                              settings.domain.resolution_deg)
-    train = load_augmented(data_dir, train_years, terrain, rcfg["local"], probs, labels)
-    valid = load_augmented(data_dir, valid_years, terrain, rcfg["local"], probs, labels)
+    needed = list(dict.fromkeys(mcfg["features"] + mcfg["regime_correction"]["static_features"] + PROB_COLS
+                                + LOCAL_COLS + ["valid_date", "lead_day", "lat", "lon", "obs_precip_mm"]))
+    train = load_augmented(data_dir, train_years, terrain, rcfg["local"], probs, labels,
+                           cell_every=mcfg["training"]["cell_every"], columns=needed)
+    valid = load_augmented(data_dir, valid_years, terrain, rcfg["local"], probs, labels, columns=needed)
 
     obs_train = IMDGridded(data_dir / "raw" / "imd").load(date(tr0, 1, 1), date(tr1, 12, 31))["precip_mm"]
     qm = QuantileMapping.load(model_dir / "quantile_mapping" / "quantile_mapping.npz")
