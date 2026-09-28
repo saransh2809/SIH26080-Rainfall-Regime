@@ -128,6 +128,16 @@ def create_app() -> FastAPI:
             return []
         return sorted(p.name.removesuffix(".json") for p in products_dir.glob("????-??-??.json"))
 
+    @app.get("/events")
+    def events() -> list[dict]:
+        """Case studies from config/events.yaml whose product has been built (held-out ones only after evaluation)."""
+        out = []
+        for e in load_yaml("events.yaml")["events"]:
+            init = date.fromisoformat(str(e["init"]))
+            if (products_dir / f"{init.isoformat()}.json").is_file():
+                out.append({**e, "init": init.isoformat()})
+        return out
+
     @app.get("/forecast/{init}")
     def forecast(init: date) -> dict:
         return json.loads(product_file(init, ".json").read_text(encoding="utf-8"))

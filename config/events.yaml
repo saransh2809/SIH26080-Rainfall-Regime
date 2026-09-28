@@ -1,0 +1,77 @@
+# Case studies offered in the dashboard. Chosen from the observations, not from memory: in each period, days with
+# the most IMD 0.25° cells at or above 115.6 mm, one per region. `init` is the 00 UTC run whose day-1 forecast is
+# valid for the event day; products exist for the three runs before it, so all three lead days show the event.
+# `district` is the district (Census-2011 boundaries) containing the heaviest observed cell; `observed_max_mm` is
+# that cell's IMD value. Held-out events (test / operational) are built only after the one-time final evaluation.
+
+events:
+  - id: gujarat-konkan-2016
+    init: 2016-08-01
+    period: validation
+    source: archive
+    district: 491
+    observed_max_mm: 345
+    label: "South Gujarat / north Konkan coast, 2 Aug 2016"
+  - id: rajasthan-mp-2016
+    init: 2016-08-19
+    period: validation
+    source: archive
+    district: 129
+    observed_max_mm: 237
+    label: "Rajasthan – Madhya Pradesh, 20 Aug 2016"
+  - id: north-gujarat-2017
+    init: 2017-07-24
+    period: validation
+    source: archive
+    district: 469
+    observed_max_mm: 417
+    label: "North Gujarat (Banas Kantha), 25 Jul 2017"
+  - id: north-bengal-2017
+    init: 2017-08-11
+    period: validation
+    source: archive
+    district: 328
+    observed_max_mm: 435
+    label: "North Bengal – Bihar, 12 Aug 2017"
+  - id: mumbai-2017
+    init: 2017-08-29
+    period: validation
+    source: archive
+    district: 518
+    observed_max_mm: 264
+    label: "Mumbai, 30 Aug 2017"
+  - id: kerala-2018
+    init: 2018-08-15
+    period: test
+    source: archive
+    district: 597
+    observed_max_mm: 295
+    label: "Kerala floods, 16 Aug 2018"
+  - id: konkan-2021
+    init: 2021-07-22
+    period: operational_test
+    source: operational
+    district: 520
+    observed_max_mm: 466
+    label: "Konkan (Raigad), 23 Jul 2021"
+  - id: meghalaya-2022
+    init: 2022-06-15
+    period: operational_test
+    source: operational
+    district: 296
+    observed_max_mm: 670
+    label: "Meghalaya, 16 Jun 2022"
+  - id: telangana-2023
+    init: 2023-07-26
+    period: operational_test
+    source: operational
+    district: 534
+    observed_max_mm: 411
+    label: "Telangana (Karimnagar; Andhra Pradesh in 2011 boundaries), 27 Jul 2023"
+  - id: saurashtra-2024
+    init: 2024-08-26
+    period: operational_test
+    source: operational
+    district: 476
+    observed_max_mm: 325
+    label: "Saurashtra (Rajkot), 27 Aug 2024"

@@ -152,32 +152,22 @@ class ProductBuilder:
         return {lead: {"raw": r["A_raw_nwp"]["rmse"], "corrected": r["C1_regime_features"]["rmse"]}
                 for lead, r in res.items()}
 
-    # ---- build ----
-    def build(self, init: date) -> Product:
-        """Product from the archived reforecast tables (training, validation or test years)."""
-        year = init.year
-        init_ts = pd.Timestamp(init)
-        table = pd.read_parquet(self.data_dir / "processed" / f"table_{year}.parquet",
-                                filters=[("init_time", "==", init_ts)])
+    # ---- inputs ----
+    def archive_inputs(self, year: int, init: date | None = None) -> tuple[pd.DataFrame, pd.DataFrame, xr.Dataset]:
+        """Cell table, classifier rows and synoptic fields from the archived reforecast (one init or a whole year)."""
+        filters = None if init is None else [("init_time", "==", pd.Timestamp(init))]
+        table = pd.read_parquet(self.data_dir / "processed" / f"table_{year}.parquet", filters=filters)
         if table.empty:
-            raise ValueError(f"no forecast rows for {init}")
+            raise ValueError(f"no forecast rows for {init or year}")
+        inits = pd.DatetimeIndex(table["init_time"].unique())
         regime_rows = pd.read_parquet(self.data_dir / "processed" / "regime_features.parquet")
-        regime_rows = regime_rows[regime_rows["init_time"] == init_ts].sort_values("lead_day")
+        regime_rows = regime_rows[regime_rows["init_time"].isin(inits)].sort_values(["init_time", "lead_day"])
         fields = xr.open_dataset(self.data_dir / "interim" / "gefs_fields" / f"fields_{year}.nc").load()
-        fields = fields.sel(init_time=[init_ts])
-        return self._assemble(init, table, regime_rows, fields, self.classifier, self.classifier_features,
-                              {"source": "archive", "forecast": "NOAA GEFSv12 reforecast, control member",
-                               **self._classifier_meta("LGBM", "LightGBM on forecast fields and rainfall "
-                                                               "observed before the forecast was issued"),
-                               "in_season": True, "verification": "observed rainfall attached"})
+        return table, regime_rows, fields.sel(init_time=inits)
 
-    def build_live(self, init: date, fc: xr.Dataset, fields: xr.Dataset,
-                   observed: xr.Dataset | None = None) -> Product:
-        """Product from a freshly downloaded operational forecast.
-
-        Uses the classifier trained without observed persistence (IMD publishes each year's grid only after the
-        year ends). `observed`, when IMD has published the valid days, is attached for verification only.
-        """
+    def live_inputs(self, fc: xr.Dataset, fields: xr.Dataset,
+                    observed: xr.Dataset | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Cell table and classifier rows built directly from operational forecasts (any number of inits)."""
         table = build_forecast_table(fc, self.rain_climatology, self.land_mask)
         if observed is not None:
             days = pd.DatetimeIndex(table["valid_date"].unique())
@@ -191,24 +181,23 @@ class ProductBuilder:
         regime_rows = build_classifier_table(fields, fc, self.land_mask, cfg["classifier_features"],
                                              cfg["synoptic"]["active_break"]["core_zone_box"],
                                              pd.Series(dtype=float), (min(months), max(months)))
-        regime_rows = add_forecast_anomaly(regime_rows, self.forecast_core_stats).sort_values("lead_day")
-        valid_months = {int(m) for m in table["valid_date"].dt.month.unique()}
-        meta = {"source": "live", "forecast": "NOAA GEFSv12 operational, control member",
-                **self._classifier_meta("LGBM_live", "LightGBM on forecast fields only"),
-                "in_season": valid_months <= set(months),
-                "verification": "observed rainfall attached" if observed is not None
-                else "pending: IMD has not published observations for these days"}
-        return self._assemble(init, table, regime_rows, fields, self.live_classifier,
-                              self.live_classifier_features, meta)
+        regime_rows = add_forecast_anomaly(regime_rows, self.forecast_core_stats).sort_values(["init_time", "lead_day"])
+        return table, regime_rows
 
-    def _assemble(self, init: date, table: pd.DataFrame, regime_rows: pd.DataFrame, fields: xr.Dataset,
-                  classifier: lgb.Booster, classifier_features: list[str], meta: dict) -> Product:
-        proba = pd.DataFrame(classifier.predict(regime_rows[classifier_features].astype(np.float32)),
-                             columns=CLASSES)
+    # ---- predictions (shared by products and the one-time evaluation) ----
+    def predict(self, table: pd.DataFrame, regime_rows: pd.DataFrame, fields: xr.Dataset, live: bool,
+                labels: pd.Series | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Add regime inputs, corrected rainfall and heavy-rain probabilities to every cell row.
+
+        `labels` (observed regimes) are attached only as obs_* diagnostic columns for scoring, never used as inputs.
+        """
+        classifier = self.live_classifier if live else self.classifier
+        features = self.live_classifier_features if live else self.classifier_features
+        proba = pd.DataFrame(classifier.predict(regime_rows[features].astype(np.float32)), columns=CLASSES)
         probs = regime_rows[["init_time", "lead_day"]].reset_index(drop=True)
         probs[PROB_COLS] = proba.to_numpy()
         probs["pred_regime"] = proba.idxmax(axis=1)
-        labels = pd.Series(dtype=object)
+        labels = pd.Series(dtype=object) if labels is None else labels
         table = add_regime_columns(table, fields, self.terrain, load_yaml("regimes.yaml")["local"], probs, labels)
 
         table["corrected_mm"] = self.corrector.predict(table)
@@ -220,11 +209,42 @@ class ProductBuilder:
                 dayofyear=xr.DataArray(table["valid_date"].dt.dayofyear.to_numpy(), dims="row"),
                 lat=xr.DataArray(table["lat"].to_numpy(), dims="row"),
                 lon=xr.DataArray(table["lon"].to_numpy(), dims="row")).to_numpy()
-            booster, features, calibrate = self.heavy(target)
-            table[f"p_{target}"] = calibrate(booster.predict(table[features].astype(np.float32)))
+            booster, heavy_features, calibrate = self.heavy(target)
+            table[f"p_{target}"] = calibrate(booster.predict(table[heavy_features].astype(np.float32)))
         table["local_regime"] = table[LOCAL_COLS].to_numpy().argmax(axis=1)
-        summary = {**self._summary(init, probs, table), **meta}  # needs the model's own feature names
+        return table, probs
 
+    # ---- products ----
+    def build(self, init: date) -> Product:
+        """Product from the archived reforecast tables (training, validation or test years)."""
+        table, regime_rows, fields = self.archive_inputs(init.year, init)
+        table, probs = self.predict(table, regime_rows, fields, live=False)
+        return self._product(init, probs, table, {
+            "source": "archive", "forecast": "NOAA GEFSv12 reforecast, control member",
+            **self._classifier_meta("LGBM", "LightGBM on forecast fields and rainfall observed before the forecast "
+                                            "was issued"),
+            "in_season": True, "verification": "observed rainfall attached"})
+
+    def build_live(self, init: date, fc: xr.Dataset, fields: xr.Dataset,
+                   observed: xr.Dataset | None = None) -> Product:
+        """Product from a freshly downloaded operational forecast.
+
+        Uses the classifier trained without observed persistence (IMD publishes each year's grid only after the
+        year ends). `observed`, when IMD has published the valid days, is attached for verification only.
+        """
+        table, regime_rows = self.live_inputs(fc, fields, observed)
+        table, probs = self.predict(table, regime_rows, fields, live=True)
+        months = set(self.s.season.months)
+        valid_months = {int(m) for m in table["valid_date"].dt.month.unique()}
+        return self._product(init, probs, table, {
+            "source": "live", "forecast": "NOAA GEFSv12 operational, control member",
+            **self._classifier_meta("LGBM_live", "LightGBM on forecast fields only"),
+            "in_season": valid_months <= months,
+            "verification": "observed rainfall attached" if observed is not None
+            else "pending: IMD has not published observations for these days"})
+
+    def _product(self, init: date, probs: pd.DataFrame, table: pd.DataFrame, meta: dict) -> Product:
+        summary = {**self._summary(init, probs, table), **meta}  # needs the model's own feature names
         display = table.rename(columns={"nwp_precip_mm": "raw_mm", "obs_precip_mm": "observed_mm"})
         return Product(self._grids(display), self._districts(display), summary)
 

@@ -137,6 +137,13 @@ def main() -> None:
     log.info("report written to %s", reports / "phase6_validation.md")
 
     out = model_dir / "regime_bc"
+    c2.save(out / "C2")
+    write_metadata(out / "C2", name="C2", model_type="one LightGBM Tweedie regressor per predicted synoptic regime",
+                   features=c2.features, training_period=(tr0, tr1), validation_period=(va0, va1),
+                   data_sources={"regime_probabilities": f"{bcfg['classifier']} out-of-fold"},
+                   validation_metrics={str(lead): {"rmse": r["C2_regime_split"]["rmse"], "bias": r["C2_regime_split"]["bias"]}
+                                       for lead, r in results.items()},
+                   extra={"fallback_regimes": c2.fallback_regimes})
     report_key = {"B2s": "B2s_plus_static", "C1": "C1_regime_features"}
     for name, key in report_key.items():
         fitted[name].save(out / name)

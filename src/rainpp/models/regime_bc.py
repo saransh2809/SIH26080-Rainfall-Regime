@@ -8,7 +8,9 @@ fallback is recorded rather than hidden.
 
 from __future__ import annotations
 
+import json
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -84,6 +86,25 @@ class RegimeSplitCorrector:
             if rows.any():
                 out[rows] = model.predict(table[rows])
         return out
+
+    def save(self, directory: Path) -> None:
+        """One sub-directory per specialised regime plus `pooled`, and a manifest."""
+        directory.mkdir(parents=True, exist_ok=True)
+        self.fallback.save(directory / "pooled")
+        for regime, model in self.models.items():
+            model.save(directory / regime)
+        manifest = {"features": self.features, "regime_column": self.regime_column, "min_rows": self.min_rows,
+                    "rounds": self.rounds, "regimes": sorted(self.models), "fallback_regimes": self.fallback_regimes}
+        (directory / "regime_split.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    @classmethod
+    def load(cls, directory: Path) -> RegimeSplitCorrector:
+        manifest = json.loads((directory / "regime_split.json").read_text(encoding="utf-8"))
+        model = cls(manifest["features"], {}, manifest["rounds"], manifest["regime_column"], manifest["min_rows"])
+        model.fallback = LGBMCorrector.load(directory / "pooled")
+        model.models = {r: LGBMCorrector.load(directory / r) for r in manifest["regimes"]}
+        model.fallback_regimes = manifest["fallback_regimes"]
+        return model
 
     def routing(self, table: pd.DataFrame) -> dict[str, int]:
         """How many rows each specialised model (or the pooled fallback) handled."""

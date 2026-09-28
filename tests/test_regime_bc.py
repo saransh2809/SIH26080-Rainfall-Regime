@@ -35,6 +35,16 @@ def test_split_model_learns_regime_specific_bias_and_falls_back_for_rare() -> No
     assert (pred >= 0).all()
 
 
+def test_split_model_round_trips_through_disk(tmp_path) -> None:
+    model = RegimeSplitCorrector(["nwp_precip_mm"], PARAMS, rounds=50, regime_column="regime", min_rows=500)
+    model.fit(_data(4000, 0))
+    model.save(tmp_path / "C2")
+    loaded = RegimeSplitCorrector.load(tmp_path / "C2")
+    test = _data(1000, 1)
+    np.testing.assert_allclose(loaded.predict(test), model.predict(test))
+    assert loaded.fallback_regimes == model.fallback_regimes
+
+
 def _qm_table(n_days: int, seed: int) -> pd.DataFrame:
     """Two cells; the forecast is 2x too wet in ACTIVE and 3x too dry in BREAK. SYNTHETIC."""
     rng = np.random.default_rng(seed)

@@ -25,6 +25,7 @@ export default function App() {
   const districts = useApi(api.districts)
   const products = useApi(api.products)
   const phase6 = useApi(() => api.verification('phase6'))
+  const events = useApi(api.events)
 
   const [initial] = useState(() => readViewState(window.location.search))
   const [chosenInit, setInit] = useState<string | null>(initial.init)
@@ -69,6 +70,17 @@ export default function App() {
     ? districtForecast.data.find((d) => d.district_id === selectedId) : undefined
   const leadSummary = summary.state === 'ready' ? summary.data.leads[String(lead)] : undefined
   const note = layerNote(layer)
+  const activeCase = events.state === 'ready' ? events.data.find((e) => e.init === init) : undefined
+  const caseDistrict = activeCase && districts.state === 'ready'
+    ? districts.data.find((d) => d.district_id === activeCase.district) : undefined
+  const openCase = (id: string) => {
+    const e = events.state === 'ready' ? events.data.find((x) => x.id === id) : undefined
+    if (!e) return
+    setInit(e.init)
+    setLead(1)
+    setLayer('p_heavy_max')
+    setSelectedId(e.district)
+  }
 
   return (
     <LangContext.Provider value={lang}>
@@ -89,6 +101,17 @@ export default function App() {
         </header>
 
         <nav className="controls" aria-label={t('controlsLabel')}>
+          {events.state === 'ready' && events.data.length > 0 && (
+            <label className="control">
+              <span>{t('caseStudy')}</span>
+              <select value={activeCase?.id ?? ''} onChange={(e) => openCase(e.target.value)}>
+                <option value="" disabled>{t('chooseCase')}</option>
+                {events.data.map((e) => (
+                  <option key={e.id} value={e.id}>{e.label} · {t(`period_${e.period}`)}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="control">
             <span>{t('issued')}</span>
             <select value={init ?? ''} onChange={(e) => setInit(e.target.value)} disabled={products.state !== 'ready'}>
@@ -148,6 +171,12 @@ export default function App() {
 
           <div className="side">
             {products.state === 'ready' && products.data.length === 0 && <p className="notice">{t('noProducts')}</p>}
+            {activeCase && lead === 1 && (
+              <p className="notice">
+                <strong>{activeCase.label}.</strong>{' '}
+                {t('caseNote', { mm: activeCase.observed_max_mm, district: caseDistrict?.district_name ?? String(activeCase.district) })}
+              </p>
+            )}
             {summary.state === 'ready' && <ProductSource summary={summary.data} />}
             {summary.state === 'ready' && leadSummary && <RegimeCard lead={leadSummary} summary={summary.data} />}
             <DistrictPanel district={selected} forecast={selectedForecast} />

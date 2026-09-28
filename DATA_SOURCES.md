@@ -40,6 +40,20 @@ Rule: role **B** and **C** data must never appear as model *inputs* at inference
 | India suitable | Yes (global) |
 | Why chosen | Only free source with a **long, consistent** archive of real NWP forecasts. 20 monsoon seasons from one frozen model version is exactly what post-processing needs. Operational GEFS has run this same v12 system since Sept 2020, so a model trained here can be applied to live GEFS forecasts. |
 
+### 2.1b NOAA GEFSv12 operational forecasts — **live input and operational test**
+
+| Field | Value |
+|---|---|
+| Provider | NOAA NCEP, via NOAA Open Data Dissemination on AWS |
+| URL | bucket `s3://noaa-gefs-pds` (**Verified**, listing 2026-09-29) |
+| Type | **Forecast** (the running GEFSv12 system, same model version as the reforecast) |
+| Period used | 00 UTC runs; GEFSv12 files under `gefs.{YYYYMMDD}/00/atmos/` from 2020-09-23; JJAS 2021–2025 downloaded as the operational test set; newest run for live products |
+| Format | GRIB2, one file per member and forecast hour with a `.idx` index (**Verified**, 2026-09-28 00 UTC): `pgrb2sp25/gec00.t00z.pgrb2s.0p25.fHHH` (0.25°: APCP, PWAT, PRMSL), `pgrb2ap5/…pgrb2a.0p50.fHHH` (0.5°: UGRD/VGRD 850 mb), `pgrb2bp5/…pgrb2b.0p50.fHHH` (0.5°: `PRES:mean sea level`) |
+| APCP storage | Same 6-hour buckets as the reforecast: file `fHHH` holds `(6k)-(HHH) hour acc` (**Verified**) |
+| Differences from the reforecast | Different initial-condition analysis (operational GDAS vs reforecast), so biases can differ. 850 hPa wind and MSL pressure exist only at 0.5°; they are interpolated to 0.25° and then processed identically. Effect on the classifier measured on validation days (`reports/operational_fields_check.json`). The reforecast's `PRES:mean sea level` differs from operational PRMSL by up to 9 hPa locally, so the identically named message is used. |
+| Measured cost | ≈ 45 s per init for Days 1–3 rainfall and fields, parallel byte-range requests |
+| Access / licence | Anonymous, NOAA open data (public domain) |
+
 ### 2.2 NOAA GFS 0.25° operational archive — secondary / independent test
 
 | Field | Value |
@@ -73,7 +87,7 @@ ERA5 precipitation comes from short-range (≤18 h) forecasts that are heavily c
 | Provider | India Meteorological Department, Pune |
 | URL | https://imdpune.gov.in/cmpg/Griddata/Rainfall_25_NetCDF.html (NetCDF) · https://imdpune.gov.in/cmpg/Griddata/Rainfall_25_Bin.html (binary) |
 | Type | **Observation** (gauge-based analysis, Pai et al. 2014, MAUSAM) |
-| Period | 1901–2024 (**Verified**) |
+| Period | 1901–2025 (**Verified** 2026-09-29: complete 2025 file downloaded; the endpoint returns nothing for the current year 2026, so live forecasts cannot use this year's observations and stay unverified until IMD publishes the year) |
 | Grid | 0.25°, 135 × 129 points, 6.5°N–38.5°N, 66.5°E–100.0°E (**Verified**) |
 | Rain day | 24 h ending 03 UTC (08:30 IST), **labelled by the date the window ends** (**Verified empirically**, Phase 3 — see §7) |
 | Access | Free. Yearly NetCDF via `POST https://imdpune.gov.in/cmpg/Griddata/RF25.php` with form field `RF25=<year>` (≈25 MB/year). The server drops connections intermittently; the downloader retries. (**Verified**) |

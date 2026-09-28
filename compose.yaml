@@ -1,0 +1,14 @@
+# docker compose up --build   →   http://localhost:8080
+# Needs data/, models/ and reports/ produced by the pipeline on this machine (they are not in git).
+services:
+  dashboard:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8000"
+    environment:
+      RAINPP_MODE: demo
+    volumes:
+      - ./data:/app/data:ro
+      - ./models:/app/models:ro
+      - ./reports:/app/reports:ro
+    restart: unless-stopped

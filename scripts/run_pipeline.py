@@ -1,7 +1,7 @@
 """Run the full pipeline in order, from downloaded data to validation reports.
 
-Each step is a separate script and can also be run on its own. Test years are never scored here;
-the one-time test evaluation is a separate, deliberate step.
+Each step is a separate script and can also be run on its own. Test and operational-test years are never scored
+here; the one-time evaluation (scripts/run_final_evaluation.py) is a separate, deliberate step.
 
 Usage:
     python scripts/run_pipeline.py                 # everything after the downloads
@@ -28,6 +28,8 @@ STEPS = [
     ("phase6", ["run_regime_correction.py"]),
     ("phase6b", ["run_regime_qm.py"]),
     ("phase7", ["run_heavy_rain.py"]),
+    ("opcheck", ["check_operational_fields.py"]),
+    ("phase8", ["run_cnn_correction.py"]),
 ]
 
 

@@ -86,6 +86,16 @@ export interface DistrictForecast {
   p_very_heavy_max: number | null
 }
 
+export interface CaseStudy {
+  id: string
+  init: string
+  period: 'validation' | 'test' | 'operational_test'
+  source: 'archive' | 'operational'
+  district: number
+  observed_max_mm: number
+  label: string
+}
+
 export class ApiError extends Error {
   readonly status: number
   constructor(status: number, message: string) {
@@ -109,6 +119,7 @@ export const api = {
   geo: (layer: 'states' | 'districts') => get<GeoJson>(`/geo/${layer}`),
   verification: (phase: 'phase4' | 'phase5' | 'phase6' | 'phase7') => get<VerificationReport>(`/verification/${phase}`),
   products: () => get<string[]>('/products'),
+  events: () => get<CaseStudy[]>('/events'),
   forecast: (init: string) => get<ForecastSummary>(`/forecast/${init}`),
   forecastDistricts: (init: string, lead: number) => get<DistrictForecast[]>(`/forecast/${init}/districts?lead=${lead}`),
 }

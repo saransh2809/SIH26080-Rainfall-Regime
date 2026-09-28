@@ -82,5 +82,12 @@ def test_district_csv_rejects_bad_lead() -> None:
     assert client.get("/forecast/2017-08-28/districts.csv", params={"lead": 99}).status_code == 422
 
 
+def test_events_only_list_built_products() -> None:
+    built = set(client.get("/products").json())
+    events = client.get("/events").json()
+    assert all(e["init"] in built for e in events)
+    assert all({"label", "district", "observed_max_mm", "period"} <= set(e) for e in events)
+
+
 def test_products_endpoint_returns_list() -> None:
     assert isinstance(client.get("/products").json(), list)
