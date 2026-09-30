@@ -435,8 +435,12 @@ tr.observed-row td {
     margin: 12mm;
   }
 
-  body {
-    background: #fff;
+  html,
+  body,
+  #root,
+  .app {
+    background: #fff !important;
+    color: #000 !important;
   }
 
   .app > :not(.bulletin) {
